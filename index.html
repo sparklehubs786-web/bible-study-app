@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Destroying the Works of the Devil Through Prayer</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#6b21a8" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- SPLASH / HOME SCREEN -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <img src="images/color_4_40_41.jpg" alt="Book Cover" class="cover-img" />
+    <h1 class="home-title">Destroying the Works of the Devil Through Prayer</h1>
+    <p class="home-subtitle">The Book of Luke – Interactive Course NT3</p>
+    <p class="home-author">by Leonard N. Cheeseborough</p>
+  </div>
+  <button class="btn-start" onclick="goToSelectBook()">START</button>
+</div>
+
+<!-- SELECT BOOK SCREEN -->
+<div id="screen-select-book" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn nav-home" onclick="goHome()">🏠</button>
+    <button class="nav-btn nav-active">Select Book</button>
+  </div>
+  <div class="select-list" id="book-list">
+    <h2 class="select-title">Select Book</h2>
+    <div class="list-item" onclick="goToSelectLesson(null, 'pretest')">Pre-Test</div>
+    <div class="list-item" onclick="showIntro()">Introduction</div>
+    <!-- chapters inserted by JS -->
+    <div id="chapter-items"></div>
+    <div class="list-item" onclick="goToSelectLesson(null, 'posttest')">Post-Test</div>
+  </div>
+</div>
+
+<!-- SELECT LESSON SCREEN -->
+<div id="screen-select-lesson" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn nav-home" onclick="goHome()">🏠</button>
+    <button class="nav-btn nav-chapter" id="nav-chapter-btn" onclick="goToSelectBook()">Chapter</button>
+    <button class="nav-btn nav-active">Lesson</button>
+  </div>
+  <div class="select-list">
+    <h2 class="select-title" id="lesson-screen-title"></h2>
+    <div id="lesson-items"></div>
+  </div>
+</div>
+
+<!-- LESSON INTRO SCREEN (Title + image + START) -->
+<div id="screen-lesson-intro" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn nav-home" onclick="goHome()">🏠</button>
+    <button class="nav-btn nav-chapter" id="nav-chapter-btn2" onclick="goToSelectBook()">Chapter</button>
+    <button class="nav-btn nav-lesson" id="nav-lesson-btn2" onclick="goToSelectLessonCurrent()">Lesson</button>
+    <button class="nav-btn nav-audio">Audio</button>
+  </div>
+  <div class="lesson-intro-body">
+    <h2 id="intro-chapter-title" class="lesson-chapter-title"></h2>
+    <p id="intro-lesson-ref" class="lesson-ref"></p>
+    <p id="intro-theme" class="lesson-theme-label"></p>
+    <img id="intro-image" class="lesson-image" src="" alt="Lesson Image" />
+  </div>
+  <button class="btn-start" onclick="startLesson()">START</button>
+</div>
+
+<!-- LESSON PAGES SCREEN -->
+<div id="screen-lesson-pages" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn nav-home" onclick="goHome()">🏠</button>
+    <button class="nav-btn nav-chapter" id="nav-cp" onclick="goToSelectBook()"></button>
+    <button class="nav-btn nav-lesson" id="nav-ls" onclick="goToSelectLessonCurrent()"></button>
+    <button class="nav-btn nav-audio" id="nav-audio-btn" onclick="toggleAudio()">Audio</button>
+  </div>
+
+  <!-- Page content rendered here -->
+  <div id="page-content" class="page-content"></div>
+
+  <!-- Audio Player -->
+  <div id="audio-player" class="audio-player hidden">
+    <button onclick="togglePlayPause()" id="play-btn">▶</button>
+    <input type="range" id="audio-seek" value="0" min="0" max="100" oninput="seekAudio(this.value)" />
+    <span id="audio-label">Audio</span>
+    <button onclick="adjustVolume()">🔊</button>
+  </div>
+
+  <!-- Prev / Next -->
+  <div class="nav-footer">
+    <button class="btn-prev" onclick="prevPage()">◀ Previous</button>
+    <button class="btn-next" onclick="nextPage()">Next ▶</button>
+  </div>
+</div>
+
+<!-- MODAL: Introduction -->
+<div id="modal-intro" class="modal hidden">
+  <div class="modal-box">
+    <h2>Instructions</h2>
+    <div class="modal-scroll">
+      <p><strong>Follow the guidelines below to complete each chapter.</strong></p>
+      <p><strong>Step 1</strong> – Read the title on the chapter page.</p>
+      <p><strong>Step 2</strong> – Memorize the theme listed for each passage on the chapter page.</p>
+      <p><strong>Lesson #1 — Scripture Page</strong></p>
+      <p><strong>Step 3</strong> – Read each passage printed.</p>
+      <p><strong>Step 4</strong> – Memorize the theme listed.</p>
+      <p><strong>Step 5</strong> – Read and highlight any words, phrases, or themes from the passage that interest you.</p>
+      <p><strong>Treasure Chest Page</strong></p>
+      <p><strong>Step 6</strong> – Place your highlighted notes from the scripture page into your treasure chest.</p>
+      <p><strong>Step 7</strong> – Memorize the theme listed.</p>
+      <p><strong>Question Page</strong></p>
+      <p><strong>Step 8</strong> – Read the passage printed again.</p>
+      <p><strong>Step 9</strong> – Memorize the theme listed.</p>
+      <p><strong>Step 10</strong> – Answer the listed questions.</p>
+      <p><strong>Imagination Sketch Page</strong></p>
+      <p><strong>Step 11</strong> – Read the listed passage printed again.</p>
+      <p><strong>Step 12</strong> – Memorize the theme listed.</p>
+      <p><strong>Step 13</strong> – Use your imagination to sketch or write your insight from the passage.</p>
+      <p><strong>Lesson #2 — Repeat Steps 1–13</strong></p>
+      <p><strong>Review Page</strong></p>
+      <p><strong>Step 14</strong> – List the two main themes.</p>
+      <p><strong>Step 15</strong> – List the scriptures that support the two main themes.</p>
+      <p><strong>Personal Application Page</strong> – Ask God for understanding and list the life application(s) as the Holy Spirit reveals them.</p>
+    </div>
+    <button class="btn-close" onclick="closeModal('modal-intro')">Close</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
