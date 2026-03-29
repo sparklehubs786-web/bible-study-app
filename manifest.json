@@ -1,0 +1,22 @@
+{
+  "name": "Destroying the Works of the Devil Through Prayer",
+  "short_name": "DTWD Prayer",
+  "description": "Interactive Bible Study Workbook - The Book of Luke by Leonard Cheeseborough",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e1b4b",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "images/color_4_40_41.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "images/color_4_40_41.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
