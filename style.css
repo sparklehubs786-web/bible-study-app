@@ -904,7 +904,112 @@ body {
   color: #c4b5fd;
   margin-top: 4px;
 }
+/* ===== LESSON BANNER (on every page) ===== */
+.lesson-label-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.lesson-label-chapter {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.lesson-label-num {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.lesson-label-theme {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  font-style: italic;
+}
 
+/* ===== COMPLETE BUTTON ===== */
+.complete-row {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+.complete-btn {
+  padding: 12px 28px;
+  border-radius: 30px;
+  border: 2px solid var(--gray-300);
+  background: var(--white);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--gray-600);
+  transition: all 0.25s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.complete-btn:hover {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+.complete-btn.done {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+}
+
+/* ===== SAVE BUTTON ===== */
+.save-row {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+}
+.save-btn {
+  padding: 10px 24px;
+  border-radius: 20px;
+  border: 2px solid var(--purple);
+  background: var(--white);
+  color: var(--purple);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.save-btn:hover {
+  background: var(--purple);
+  color: var(--white);
+}
+
+/* ===== ANNOTATION HINT ===== */
+.annotation-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 4px;
+  padding: 0 8px;
+}
+
+/* ===== PROGRESS BADGES ===== */
+.done-badge {
+  font-size: 0.95rem;
+}
+.progress-badge {
+  display: inline-block;
+  background: var(--purple-light);
+  color: var(--purple-dark);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 6px;
+}
 /* ===== SAVE INDICATOR ===== */
 .save-indicator {
   position: fixed;
