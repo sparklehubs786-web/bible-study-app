@@ -1010,7 +1010,83 @@ body {
   color: #c4b5fd;
   margin-top: 4px;
 }
+/* ===== NEXT BUTTON DISABLED STATE ===== */
+.btn-next.disabled,
+.btn-next:disabled {
+  background: #9ca3af !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  opacity: 0.7;
+}
+.btn-next.disabled:hover,
+.btn-next:disabled:hover {
+  background: #9ca3af !important;
+  transform: none !important;
+}
 
+/* ===== SHAKE ANIMATION — complete button when Next is tapped without completing ===== */
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-8px); }
+  40%  { transform: translateX(8px); }
+  60%  { transform: translateX(-6px); }
+  80%  { transform: translateX(6px); }
+  100% { transform: translateX(0); }
+}
+.complete-btn.shake {
+  animation: shake 0.5s ease;
+  border-color: #ef4444 !important;
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+/* ===== ANNOTATION TOOLBAR — fixed position, always in viewport ===== */
+.annotation-toolbar {
+  position: absolute;   /* changed from fixed so scrollY offset works */
+  display: none;
+  z-index: 9999;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.35));
+}
+.annotation-toolbar.visible { display: block; }
+
+.ann-toolbar-inner {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 8px 10px;
+  align-items: center;
+}
+
+/* Make toolbar scrollable on very small screens */
+@media (max-width: 380px) {
+  .ann-toolbar-inner {
+    flex-wrap: wrap;
+    max-width: 240px;
+    justify-content: center;
+  }
+}
+
+.ann-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.1s, opacity 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ann-btn:active { transform: scale(0.93); opacity: 0.8; }
+
+.ann-highlight  { background: #fef08a; color: #713f12; }
+.ann-underline  { background: #dbeafe; color: #1e40af; }
+.ann-circle     { background: #fce7f3; color: #831843; }
+.ann-rect       { background: #d1fae5; color: #065f46; }
+.ann-triangle   { background: #fee2e2; color: #991b1b; }
+.ann-close      { background: #374151; color: #d1d5db; font-size: 0.85rem; }
 /* ===== SAVE INDICATOR ===== */
 .save-indicator {
   position: fixed;
