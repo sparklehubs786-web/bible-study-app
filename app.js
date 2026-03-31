@@ -605,37 +605,42 @@ function positionToolbar(e) {
 
   toolbar.classList.add('visible');
 
-  // Show offscreen temporarily to measure size
+  // Measure toolbar size (use fixed positioning = viewport coords)
   toolbar.style.visibility = 'hidden';
   toolbar.style.top = '0px';
   toolbar.style.left = '0px';
 
-  const tbW = toolbar.offsetWidth || 320;
-  const tbH = toolbar.offsetHeight || 52;
+  const tbW = toolbar.offsetWidth || 340;
+  const tbH = toolbar.offsetHeight || 56;
+  const vW  = window.innerWidth;
+  const vH  = window.innerHeight;
 
   let refTop, refLeft;
 
-  // Try to get position from selection rect
+  // Use viewport (client) coordinates because toolbar is position:fixed
   if (selectedRange) {
     const rect = selectedRange.getBoundingClientRect();
-    refTop  = rect.top + window.scrollY - tbH - 8;
-    refLeft = rect.left + window.scrollX + (rect.width / 2) - (tbW / 2);
+    // Prefer above selection; if not enough room, show below
+    if (rect.top - tbH - 8 > 60) {
+      refTop = rect.top - tbH - 8;
+    } else {
+      refTop = rect.bottom + 8;
+    }
+    refLeft = rect.left + (rect.width / 2) - (tbW / 2);
   } else if (e && e.changedTouches && e.changedTouches[0]) {
-    refTop  = e.changedTouches[0].clientY + window.scrollY - tbH - 12;
-    refLeft = e.changedTouches[0].clientX + window.scrollX - (tbW / 2);
+    refTop  = e.changedTouches[0].clientY - tbH - 12;
+    refLeft = e.changedTouches[0].clientX - (tbW / 2);
   } else if (e && e.clientY !== undefined) {
-    refTop  = e.clientY + window.scrollY - tbH - 12;
-    refLeft = e.clientX + window.scrollX - (tbW / 2);
+    refTop  = e.clientY - tbH - 12;
+    refLeft = e.clientX - (tbW / 2);
   } else {
-    refTop  = window.scrollY + 80;
-    refLeft = (window.innerWidth - tbW) / 2;
+    refTop  = 80;
+    refLeft = (vW - tbW) / 2;
   }
 
-  // Clamp so toolbar never goes off screen
-  const maxLeft = window.innerWidth - tbW - 8;
-  const minTop  = window.scrollY + 56; // below nav bar
-  refLeft = Math.max(8, Math.min(refLeft, maxLeft));
-  refTop  = Math.max(minTop, refTop);
+  // Clamp strictly inside viewport
+  refLeft = Math.max(6, Math.min(refLeft, vW - tbW - 6));
+  refTop  = Math.max(58, Math.min(refTop, vH - tbH - 8));
 
   toolbar.style.top  = refTop + 'px';
   toolbar.style.left = refLeft + 'px';
