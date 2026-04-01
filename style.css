@@ -731,3 +731,81 @@ body {
   .btn-prev, .btn-next { padding: 10px 14px; font-size: 0.9rem; }
   .lesson-image        { max-height: 36dvh; }
 }
+/* ===== CHANGE 2: Highlight color input in toolbar ===== */
+.ann-highlight-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.ann-color-input {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+/* ===== CHANGE 4: Sketch prompt text ===== */
+.sketch-prompt-text {
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-align: center;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-style: italic;
+}
+
+/* ===== CHANGE 8: Greater Works — Read this / Declare this ===== */
+.gw-read-section {
+  width: 100%;
+  margin-bottom: 16px;
+}
+.gw-declare-section {
+  width: 100%;
+  border-top: 1px dashed rgba(255,255,255,0.3);
+  padding-top: 14px;
+}
+.gw-section-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #a5b4fc;
+  margin-bottom: 8px;
+}
+.declare-label { color: #fbbf24; }
+
+/* ===== CHANGE 9: Test write section ===== */
+.test-write-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  border-left: 4px solid #7c3aed;
+}
+.test-write-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5b21b6;
+  margin-bottom: 8px;
+}
+.test-write-field {
+  width: 100%;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  color: #1f2937;
+  resize: vertical;
+  min-height: 90px;
+  font-family: inherit;
+  outline: none;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+}
+.test-write-field:focus { border-color: #7c3aed; background: #fff; }
