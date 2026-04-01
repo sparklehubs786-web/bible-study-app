@@ -1,226 +1,338 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pricing — Destroying the Works of the Devil</title>
-<link rel="stylesheet" href="pricing.css"/>
-</head>
-<body>
+/* ===== PRICING PAGE STYLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<div class="pricing-page">
+:root {
+  --purple: #7c3aed;
+  --purple-dark: #5b21b6;
+  --purple-light: #ede9fe;
+  --green: #16a34a;
+  --green-dark: #15803d;
+  --green-light: #dcfce7;
+  --gold: #d97706;
+  --gold-light: #fef3c7;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --black: #111827;
+  --radius: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.16);
+}
 
-  <!-- HEADER -->
-  <div class="pricing-header">
-    <h1>🙏 Destroying the Works of the Devil</h1>
-    <p class="pricing-subtitle">Interactive Bible Study App — Choose Your Plan</p>
-  </div>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%);
+  min-height: 100vh;
+  color: var(--black);
+}
 
-  <!-- STUDENT PLAN -->
-  <section class="plan-section">
-    <h2 class="section-label student-label">👨‍🎓 For Students</h2>
-    <div class="plan-card student-card">
-      <div class="plan-badge">One Time Purchase</div>
-      <h3 class="plan-name">Student Access</h3>
-      <div class="plan-price">$7 <span>one time</span></div>
-      <ul class="plan-features">
-        <li>✅ Full access to all 12 chapters</li>
-        <li>✅ All 32 lessons with scripture & key terms</li>
-        <li>✅ Treasure chest, sketch page & question pages</li>
-        <li>✅ Audio read-aloud on every page</li>
-        <li>✅ Annotation tools — highlight, underline, circle</li>
-        <li>✅ Pre-test and Post-test</li>
-        <li>✅ Personal app access forever</li>
-        <li>✅ Works on any phone, tablet or computer</li>
-        <li>✅ Receive your access URL instantly by email</li>
-      </ul>
-      <button class="btn-buy student-btn" onclick="checkout('student')">
-        Get Student Access — $7
-      </button>
-      <p class="plan-note">One time payment. No monthly fees. Yours forever.</p>
-    </div>
-  </section>
+.pricing-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+}
 
-  <!-- TEACHER PLANS -->
-  <section class="plan-section">
-    <h2 class="section-label teacher-label">👨‍🏫 For Teachers & Group Leaders</h2>
-    <p class="teacher-intro">All teacher plans include a 3-month class period. At the end of 3 months the class expires and data is cleared. Renew anytime to start a fresh class.</p>
+/* ===== HEADER ===== */
+.pricing-header {
+  text-align: center;
+  padding: 50px 20px 30px;
+  color: var(--white);
+}
+.pricing-header h1 {
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1.2;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+.pricing-subtitle {
+  font-size: 1.1rem;
+  color: #c4b5fd;
+  margin-top: 10px;
+}
 
-    <div class="teacher-plans">
+/* ===== SECTION LABELS ===== */
+.plan-section { margin-bottom: 40px; }
 
-      <!-- SMALL -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Small Group</div>
-        <h3 class="plan-name">Up to 15 Students</h3>
-        <div class="plan-price">$30 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 15 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_small')">
-          Get Small Group — $30
-        </button>
-      </div>
+.section-label {
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 10px 24px;
+  border-radius: 30px;
+  display: inline-block;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.student-label  { background: var(--green); color: var(--white); }
+.teacher-label  { background: var(--purple); color: var(--white); }
+.section-label  { background: var(--white); color: var(--gray-800); }
 
-      <!-- MEDIUM -->
-      <div class="plan-card teacher-card popular">
-        <div class="popular-badge">⭐ Most Popular</div>
-        <div class="plan-badge">Medium Group</div>
-        <h3 class="plan-name">Up to 30 Students</h3>
-        <div class="plan-price">$60 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 30 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_medium')">
-          Get Medium Group — $60
-        </button>
-      </div>
+.teacher-intro {
+  text-align: center;
+  color: #c4b5fd;
+  font-size: 0.92rem;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
 
-      <!-- LARGE -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Large Group</div>
-        <h3 class="plan-name">Up to 60 Students</h3>
-        <div class="plan-price">$120 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 60 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_large')">
-          Get Large Group — $120
-        </button>
-      </div>
+/* ===== PLAN CARDS ===== */
+.plan-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  transition: transform 0.2s;
+}
+.plan-card:hover { transform: translateY(-4px); }
 
-      <!-- EXTRA LARGE -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Extra Large</div>
-        <h3 class="plan-name">Up to 100 Students</h3>
-        <div class="plan-price">$300 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 100 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_xl')">
-          Get Extra Large — $300
-        </button>
-      </div>
+/* Student card centered */
+.student-card {
+  max-width: 460px;
+  margin: 0 auto;
+  border: 3px solid var(--green);
+}
 
-    </div>
-  </section>
+/* Teacher cards grid */
+.teacher-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+.teacher-card { border: 2px solid var(--purple-light); }
+.teacher-card.popular { border: 3px solid var(--purple); }
 
-  <!-- FAQ -->
-  <section class="faq-section">
-    <h2 class="section-label">❓ Common Questions</h2>
-    <div class="faq-list">
-      <div class="faq-item">
-        <div class="faq-q">What happens after 3 months?</div>
-        <div class="faq-a">Your class expires and student submission data is cleared from the database. Students keep their personal app access forever. You simply renew to start a new class anytime.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">How do students join my class?</div>
-        <div class="faq-a">After purchasing, you receive a unique class code. Share it with your students. They log into the app, enter your class code, and they are instantly enrolled in your class.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Do students need to pay separately?</div>
-        <div class="faq-a">Yes. Each student purchases the $7 student plan which gives them full app access forever. The teacher plan covers the class management and submission features.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">How do I receive payments?</div>
-        <div class="faq-a">All payments are processed securely through Stripe and deposited directly into your bank account within 2 business days.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Can I upgrade my plan?</div>
-        <div class="faq-a">Yes. If your class grows you can upgrade your plan at any time and the difference will be applied to your account.</div>
-      </div>
-    </div>
-  </section>
+.popular-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--purple);
+  color: var(--white);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
 
-  <!-- FOOTER -->
-  <div class="pricing-footer">
-    <p>© 2026 Leonard N. Cheeseborough — Raindrop International Distributors Enterprises</p>
-    <p>All payments secured by <strong>Stripe</strong> 🔒</p>
-    <div class="footer-links">
-      <a href="index.html">← Back to App</a>
-      <a href="teacher-login.html">Teacher Login</a>
-      <a href="dashboard.html">Teacher Dashboard</a>
-    </div>
-  </div>
+.plan-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.student-card .plan-badge { color: var(--green-dark); }
 
-</div>
+.plan-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--black);
+  margin-bottom: 10px;
+}
 
-<!-- STRIPE CHECKOUT MODAL -->
-<div id="checkout-modal" class="checkout-modal hidden">
-  <div class="checkout-box">
-    <button class="checkout-close" onclick="closeCheckout()">✕</button>
-    <h2 id="checkout-title">Complete Your Purchase</h2>
-    <div id="checkout-summary" class="checkout-summary"></div>
+.plan-price {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--purple-dark);
+  margin-bottom: 16px;
+  line-height: 1;
+}
+.student-card .plan-price { color: var(--green-dark); }
+.plan-price span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
 
-    <div class="checkout-form">
-      <label>Full Name</label>
-      <input type="text" id="buyer-name" placeholder="Your full name" />
+.plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 22px;
+}
+.plan-features li {
+  font-size: 0.88rem;
+  color: var(--gray-800);
+  line-height: 1.5;
+}
 
-      <label>Email Address</label>
-      <input type="email" id="buyer-email" placeholder="your@email.com" />
+.plan-note {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  text-align: center;
+  margin-top: 10px;
+}
 
-      <label>Card Number</label>
-      <div id="stripe-card-element" class="stripe-input"></div>
+/* ===== BUY BUTTONS ===== */
+.btn-buy {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.btn-buy:active { transform: scale(0.97); }
 
-      <div class="card-row">
-        <div>
-          <label>Expiry</label>
-          <div id="stripe-expiry-element" class="stripe-input"></div>
-        </div>
-        <div>
-          <label>CVC</label>
-          <div id="stripe-cvc-element" class="stripe-input"></div>
-        </div>
-      </div>
+.student-btn { background: var(--green); color: var(--white); box-shadow: 0 4px 16px rgba(22,163,74,0.35); }
+.student-btn:hover { background: var(--green-dark); }
+.teacher-btn { background: var(--purple); color: var(--white); box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+.teacher-btn:hover { background: var(--purple-dark); }
 
-      <div id="stripe-error" class="stripe-error hidden"></div>
+/* ===== FAQ ===== */
+.faq-section {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+.faq-section .section-label {
+  color: var(--gray-800);
+  background: var(--gray-100);
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+.faq-list { display: flex; flex-direction: column; gap: 16px; }
+.faq-item { border-left: 4px solid var(--purple); padding-left: 14px; }
+.faq-q { font-size: 0.95rem; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+.faq-a { font-size: 0.86rem; color: var(--gray-600); line-height: 1.65; }
 
-      <button class="btn-pay" id="btn-pay" onclick="processPayment()">
-        🔒 Pay Securely
-      </button>
-      <p class="secure-note">🔒 Secured by Stripe. We never store your card details.</p>
-    </div>
-  </div>
-</div>
+/* ===== FOOTER ===== */
+.pricing-footer {
+  text-align: center;
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.footer-links { display: flex; gap: 20px; justify-content: center; margin-top: 8px; }
+.footer-links a { color: #a5b4fc; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
+.footer-links a:hover { color: var(--white); }
 
-<!-- SUCCESS MODAL -->
-<div id="success-modal" class="checkout-modal hidden">
-  <div class="checkout-box success-box">
-    <div class="success-icon">✅</div>
-    <h2>Payment Successful!</h2>
-    <p id="success-message"></p>
-    <button class="btn-buy student-btn" onclick="closeSuccess()">Continue</button>
-  </div>
-</div>
+/* ===== CHECKOUT MODAL ===== */
+.checkout-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.checkout-modal.hidden { display: none; }
 
-<script src="https://js.stripe.com/v3/"></script>
-<script src="pricing.js"></script>
-</body>
-</html>
+.checkout-box {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.checkout-close {
+  position: absolute; top: 14px; right: 14px;
+  background: var(--gray-100); border: none;
+  border-radius: 50%; width: 32px; height: 32px;
+  font-size: 0.9rem; cursor: pointer; font-weight: 700;
+  color: var(--gray-800);
+}
+
+.checkout-box h2 { font-size: 1.3rem; font-weight: 800; color: var(--purple-dark); margin-bottom: 14px; }
+
+.checkout-summary {
+  background: var(--purple-light);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--purple-dark);
+  margin-bottom: 20px;
+}
+
+.checkout-form { display: flex; flex-direction: column; gap: 12px; }
+.checkout-form label { font-size: 0.82rem; font-weight: 700; color: var(--gray-800); margin-bottom: -6px; }
+.checkout-form input {
+  border: 2px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.checkout-form input:focus { border-color: var(--purple); }
+
+.stripe-input {
+  border: 2px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--white);
+  transition: border-color 0.2s;
+  min-height: 44px;
+}
+.stripe-input.focused { border-color: var(--purple); }
+
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.stripe-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.stripe-error.hidden { display: none; }
+
+.btn-pay {
+  width: 100%;
+  padding: 14px;
+  background: var(--purple);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-pay:hover { background: var(--purple-dark); }
+.btn-pay:disabled { background: var(--gray-400); cursor: not-allowed; }
+
+.secure-note { font-size: 0.75rem; color: var(--gray-600); text-align: center; }
+
+/* Success modal */
+.success-box { text-align: center; padding: 40px 24px; }
+.success-icon { font-size: 4rem; margin-bottom: 16px; }
+.success-box h2 { font-size: 1.5rem; font-weight: 800; color: var(--green-dark); margin-bottom: 12px; }
+.success-box p { font-size: 0.95rem; color: var(--gray-600); margin-bottom: 24px; line-height: 1.6; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .teacher-plans { grid-template-columns: 1fr; }
+  .plan-price { font-size: 2rem; }
+  .pricing-header { padding: 30px 16px 20px; }
+}
