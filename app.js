@@ -68,15 +68,8 @@ function updateNextButton() {
   const isDone = !pageKey || getUserKey(pageKey) === 'true';
   const btn = document.getElementById('btn-next-main');
   if (!btn) return;
-  if (isDone) {
-    btn.disabled = false;
-    btn.classList.remove('disabled');
-    btn.title = '';
-  } else {
-    btn.disabled = true;
-    btn.classList.add('disabled');
-    btn.title = 'Mark this page as complete to continue';
-  }
+  btn.disabled = !isDone;
+  btn.classList.toggle('disabled', !isDone);
 }
 
 function getPageKey(page) {
@@ -84,24 +77,27 @@ function getPageKey(page) {
   const lesson = page.lesson;
   const chapter = page.chapter;
   switch(page.type) {
-    case 'prayer_before':  return lesson ? 'complete_prayer_' + lesson.id + '_before' : null;
-    case 'scripture':      return lesson ? 'complete_scripture_' + lesson.id : null;
-    case 'key_terms':      return lesson ? 'complete_keyterms_' + lesson.id : null;
-    case 'treasure_chest': return lesson ? 'complete_treasure_' + lesson.id : null;
-    case 'questions':      return lesson ? 'complete_questions_' + lesson.id : null;
-    case 'sketch':         return lesson ? 'complete_sketch_' + lesson.id : null;
-    case 'review':         return chapter ? 'complete_review_' + chapter.id : null;
+    case 'prayer_before':        return lesson ? 'complete_prayer_' + lesson.id + '_before' : null;
+    case 'scripture':            return lesson ? 'complete_scripture_' + lesson.id : null;
+    case 'key_terms':            return lesson ? 'complete_keyterms_' + lesson.id : null;
+    case 'treasure_chest':       return lesson ? 'complete_treasure_' + lesson.id : null;
+    case 'questions':            return lesson ? 'complete_questions_' + lesson.id : null;
+    case 'sketch':               return lesson ? 'complete_sketch_' + lesson.id : null;
+    case 'review':               return chapter ? 'complete_review_' + chapter.id : null;
     case 'personal_application': return chapter ? 'complete_personal_' + chapter.id : null;
-    case 'greater_works':  return lesson ? 'complete_gw_' + lesson.id : null;
-    case 'prayer_after':   return lesson ? 'complete_prayer_' + lesson.id + '_after' : null;
-    case 'test':           return page.day ? 'complete_test_' + page.testType + '_' + page.day.day : null;
+    case 'greater_works':        return lesson ? 'complete_gw_' + lesson.id : null;
+    case 'prayer_after':         return lesson ? 'complete_prayer_' + lesson.id + '_after' : null;
+    case 'test':                 return page.day ? 'complete_test_' + page.testType + '_' + page.day.day : null;
     default: return null;
   }
 }
 
 // ===== COMPLETE BUTTON =====
 function completeButton(pageKey, isDone) {
-  return '<div class="complete-row"><button class="complete-btn ' + (isDone ? 'done' : '') + '" id="btn-complete-' + pageKey + '" onclick="toggleComplete(\'' + pageKey + '\')">' + (isDone ? '✅ Completed' : '☐ Mark as Complete') + '</button></div>';
+  return '<div class="complete-row"><button class="complete-btn ' + (isDone ? 'done' : '') +
+    '" id="btn-complete-' + pageKey + '" onclick="toggleComplete(\'' + pageKey + '\')">' +
+    (isDone ? '✅ Completed' : '☐ Mark as Complete') +
+    '</button></div>';
 }
 
 function toggleComplete(pageKey) {
@@ -153,7 +149,7 @@ function goToSelectLesson(chapterId, special) {
   currentChapter = chapterId;
   const titleEl = document.getElementById('lesson-screen-title');
   const itemsEl = document.getElementById('lesson-items');
-  const chBtn  = document.getElementById('nav-chapter-btn');
+  const chBtn   = document.getElementById('nav-chapter-btn');
   itemsEl.innerHTML = '';
 
   if (special === 'pretest') {
@@ -175,7 +171,12 @@ function goToSelectLesson(chapterId, special) {
       const isDone = getUserKey('complete_prayer_' + lessonId + '_after') === 'true';
       const el = document.createElement('div');
       el.className = 'list-item-sub';
-      el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><span>Lesson ' + lesson.number + ': ' + lesson.title + '</span>' + (isDone ? '<span style="font-size:1.2rem;">✅</span>' : '') + '</div><div class="sub-theme">Theme: ' + lesson.theme + '</div>';
+      el.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>Lesson ' + lesson.number + ': ' + lesson.title + '</span>' +
+        (isDone ? '<span style="font-size:1.2rem;">✅</span>' : '') +
+        '</div>' +
+        '<div class="sub-theme">Theme: ' + lesson.theme + '</div>';
       el.onclick = () => openLessonIntro(lessonId);
       itemsEl.appendChild(el);
     });
@@ -231,7 +232,11 @@ function buildLessonPages() {
 // ===== LESSON BANNER =====
 function lessonBanner(lesson) {
   const chapter = APP_DATA.chapters.find(c => c.id === lesson.chapterId);
-  return '<div class="lesson-label-banner"><span class="lesson-label-chapter">' + chapter.title + '</span><span class="lesson-label-num">Lesson ' + lesson.number + ': ' + lesson.passage + '</span><span class="lesson-label-theme">Theme: ' + lesson.theme + '</span></div>';
+  return '<div class="lesson-label-banner">' +
+    '<span class="lesson-label-chapter">' + chapter.title + '</span>' +
+    '<span class="lesson-label-num">Lesson ' + lesson.number + ': ' + lesson.passage + '</span>' +
+    '<span class="lesson-label-theme">Theme: ' + lesson.theme + '</span>' +
+    '</div>';
 }
 
 // ===== RENDER PAGE =====
@@ -243,7 +248,7 @@ function renderPage() {
   closeAnnotationToolbar();
 
   switch(page.type) {
-    case 'prayer_before':        renderPrayerPage(content, 'Pray before you read Lesson #' + page.lesson.number, page.lesson, 'before'); break;
+    case 'prayer_before':        renderPrayerPage(content, page.lesson, 'before'); break;
     case 'scripture':            renderScripturePage(content, page.lesson); break;
     case 'key_terms':            renderKeyTermsPage(content, page.lesson); break;
     case 'treasure_chest':       renderTreasureChestPage(content, page.lesson); break;
@@ -252,23 +257,35 @@ function renderPage() {
     case 'review':               renderReviewPage(content, page.lesson, page.chapter); break;
     case 'personal_application': renderPersonalAppPage(content, page.lesson, page.chapter); break;
     case 'greater_works':        renderGreaterWorksPage(content, page.lesson); break;
-    case 'prayer_after':         renderPrayerPage(content, 'Pray after you have completed Lesson #' + page.lesson.number, page.lesson, 'after'); break;
+    case 'prayer_after':         renderPrayerPage(content, page.lesson, 'after'); break;
   }
   updateNextButton();
 }
 
 function pageHeader(lesson, title) {
-  return lessonBanner(lesson) + '<div class="page-title">' + title + '</div><div class="page-subtitle">Read: ' + lesson.passage + '</div><div class="page-theme"><strong>Memorize the Theme:</strong> ' + lesson.theme + '</div>';
+  return lessonBanner(lesson) +
+    '<div class="page-title">' + title + '</div>' +
+    '<div class="page-subtitle">Read: ' + lesson.passage + '</div>' +
+    '<div class="page-theme"><strong>Memorize the Theme:</strong> ' + lesson.theme + '</div>';
 }
 
-// ===== PRAYER PAGE =====
-function renderPrayerPage(container, text, lesson, whenKey) {
+// ===== CHANGE 1 & 5: PRAYER PAGES — updated text =====
+function renderPrayerPage(container, lesson, whenKey) {
   const pageKey = 'complete_prayer_' + lesson.id + '_' + whenKey;
   const isDone = getUserKey(pageKey) === 'true';
-  container.innerHTML = lessonBanner(lesson) +
+
+  // CHANGE 1: "Pray to God for spiritual insight before you start Lesson #N"
+  // CHANGE 5: "Thank God for spiritual insight after you have completed Lesson #N"
+  const text = whenKey === 'before'
+    ? 'Pray to God for spiritual insight before you start Lesson #' + lesson.number
+    : 'Thank God for spiritual insight after you have completed Lesson #' + lesson.number;
+
+  container.innerHTML =
+    lessonBanner(lesson) +
     '<div class="prayer-page">' +
     '<p class="prayer-text">' + text + '</p>' +
-    '<img src="images/' + (lesson.image || 'color_4_18_19.jpg') + '" class="prayer-img" alt="Pray" onerror="this.src=\'images/color_4_18_19.jpg\'" />' +
+    '<img src="images/' + (lesson.image || 'color_4_18_19.jpg') + '" class="prayer-img" alt="Pray" ' +
+    'onerror="this.src=\'images/color_4_18_19.jpg\'" />' +
     completeButton(pageKey, isDone) +
     '</div>';
 }
@@ -277,11 +294,15 @@ function renderPrayerPage(container, text, lesson, whenKey) {
 function renderScripturePage(container, lesson) {
   const pageKey = 'complete_scripture_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
-  container.innerHTML = pageHeader(lesson, 'SCRIPTURE PAGE') +
+
+  // CHANGE 2 highlight color picker is in the toolbar (see createAnnotationToolbar)
+  container.innerHTML =
+    pageHeader(lesson, 'SCRIPTURE PAGE') +
     (lesson.image ? '<img src="images/' + lesson.image + '" class="page-image" alt="Lesson" />' : '') +
     '<div id="scripture-text" class="scripture-box selectable">' + lesson.scripture + '</div>' +
-    '<p class="annotation-hint">💡 Select any word or phrase to annotate</p>' +
+    '<p class="annotation-hint">💡 Select any word or phrase — then choose highlight color, underline, circle, or rectangle</p>' +
     completeButton(pageKey, isDone);
+
   const el = document.getElementById('scripture-text');
   el.addEventListener('mouseup', handleTextSelection);
   el.addEventListener('touchend', handleTextSelection);
@@ -293,13 +314,19 @@ function renderKeyTermsPage(container, lesson) {
   const pageKey = 'complete_keyterms_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
   const terms = lesson.keyTerms.map((t, i) =>
-    '<div class="key-term-item selectable"><div class="key-term-word">' + (i+1) + '. ' + t.word + '</div><div class="key-term-def">' + t.definition + '</div></div>'
+    '<div class="key-term-item selectable">' +
+    '<div class="key-term-word">' + (i+1) + '. ' + t.word + '</div>' +
+    '<div class="key-term-def">' + t.definition + '</div>' +
+    '</div>'
   ).join('');
   const audioText = lesson.keyTerms.map((t,i) => (i+1) + '. ' + t.word + ': ' + t.definition).join('. ');
-  container.innerHTML = pageHeader(lesson, 'KEY TERMS PAGE') +
+
+  container.innerHTML =
+    pageHeader(lesson, 'KEY TERMS PAGE') +
     '<div class="key-terms-list">' + terms + '</div>' +
     '<p class="annotation-hint">💡 Select any text to annotate</p>' +
     completeButton(pageKey, isDone);
+
   document.querySelectorAll('.key-term-item.selectable').forEach(el => {
     el.addEventListener('mouseup', handleTextSelection);
     el.addEventListener('touchend', handleTextSelection);
@@ -307,7 +334,7 @@ function renderKeyTermsPage(container, lesson) {
   document.getElementById('nav-audio-btn').setAttribute('data-text', audioText);
 }
 
-// ===== TREASURE CHEST PAGE =====
+// ===== TREASURE CHEST =====
 function renderTreasureChestPage(container, lesson) {
   const key = 'treasure_' + lesson.id;
   const pageKey = 'complete_treasure_' + lesson.id;
@@ -316,11 +343,19 @@ function renderTreasureChestPage(container, lesson) {
   try { savedData = JSON.parse(getUserKey(key) || '{}'); } catch(e) {}
   const slots = ['note1','note2','note3','note4','note5'];
   const fields = slots.map((slot, i) =>
-    '<div class="chest-field"><div class="chest-field-label">Note ' + (i+1) + '</div><textarea data-slot="' + slot + '" placeholder="Write your key notes here..." oninput="saveTreasure(' + lesson.id + ', this)">' + (savedData[slot] || '') + '</textarea></div>'
+    '<div class="chest-field">' +
+    '<div class="chest-field-label">Note ' + (i+1) + '</div>' +
+    '<textarea data-slot="' + slot + '" placeholder="Write your key notes here..." ' +
+    'oninput="saveTreasure(' + lesson.id + ', this)">' + (savedData[slot] || '') + '</textarea>' +
+    '</div>'
   ).join('');
-  container.innerHTML = pageHeader(lesson, 'TREASURE CHEST') +
+
+  container.innerHTML =
+    pageHeader(lesson, 'TREASURE CHEST') +
     '<div class="treasure-note">📖 ' + lesson.treasureChestNote + '</div>' +
-    '<div class="treasure-chest-container"><div class="chest-fields">' + fields + '<div class="treasure-img-container"><span style="font-size:3rem;">🏆</span></div></div></div>' +
+    '<div class="treasure-chest-container"><div class="chest-fields">' + fields +
+    '<div class="treasure-img-container"><span style="font-size:3rem;">🏆</span></div>' +
+    '</div></div>' +
     '<div class="save-row"><button class="save-btn" onclick="saveTreasureAll(' + lesson.id + ')">💾 Save Notes</button></div>' +
     completeButton(pageKey, isDone);
 }
@@ -340,22 +375,32 @@ function saveTreasureAll(lessonId) {
   setUserData(key, JSON.stringify(data));
 }
 
-// ===== QUESTION PAGE =====
+// ===== QUESTIONS PAGE =====
 function renderQuestionsPage(container, lesson) {
   const key = 'questions_' + lesson.id;
   const pageKey = 'complete_questions_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
   let savedData = {};
   try { savedData = JSON.parse(getUserKey(key) || '{}'); } catch(e) {}
+
   const questions = lesson.questions.map((q, i) =>
-    '<div class="question-item"><div class="question-text">' + (i+1) + '. ' + q + '</div><textarea class="question-answer" placeholder="Write your answer here..." data-qidx="' + i + '" oninput="saveQuestion(' + lesson.id + ', this)">' + (savedData[i] || '') + '</textarea></div>'
+    '<div class="question-item">' +
+    '<div class="question-text">' + (i+1) + '. ' + q + '</div>' +
+    '<textarea class="question-answer" placeholder="Write your answer here..." ' +
+    'data-qidx="' + i + '" oninput="saveQuestion(' + lesson.id + ', this)">' +
+    (savedData[i] || '') + '</textarea>' +
+    '</div>'
   ).join('');
+
   const audioText = lesson.questions.map((q, i) => 'Question ' + (i+1) + ': ' + q).join('. ');
-  container.innerHTML = pageHeader(lesson, 'Question Page') +
+
+  container.innerHTML =
+    pageHeader(lesson, 'Question Page') +
     (lesson.image ? '<img src="images/' + lesson.image + '" class="page-image" alt="Lesson" />' : '') +
     '<div class="questions-list">' + questions + '</div>' +
     '<div class="save-row"><button class="save-btn" onclick="saveAllQuestions(' + lesson.id + ')">💾 Save Answers</button></div>' +
     completeButton(pageKey, isDone);
+
   document.getElementById('nav-audio-btn').setAttribute('data-text', audioText);
 }
 
@@ -374,36 +419,62 @@ function saveAllQuestions(lessonId) {
   setUserData(key, JSON.stringify(data));
 }
 
-// ===== SKETCH PAGE =====
+// ===== CHANGE 4: SKETCH PAGE — updated text =====
 function renderSketchPage(container, lesson) {
   const pageKey = 'complete_sketch_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
-  container.innerHTML = pageHeader(lesson, 'Sketch Page') +
-    '<p style="font-size:0.88rem;color:#4b5563;text-align:center;">Use your imagination to sketch ' + lesson.passage + '</p>' +
+
+  // CHANGE 4: "Use your imagination to sketch or write your insight from Luke X:XX"
+  const sketchPrompt = 'Use your imagination to sketch or write your insight from ' + lesson.passage;
+
+  container.innerHTML =
+    pageHeader(lesson, 'SKETCH PAGE') +
+    '<p class="sketch-prompt-text">' + sketchPrompt + '</p>' +
     '<div class="sketch-container">' +
-    '<div class="sketch-tools"><button class="tool-btn active" id="tool-pen" onclick="setTool(\'pen\')">✏️ Pen</button><button class="tool-btn" id="tool-eraser" onclick="setTool(\'eraser\')">⬜ Eraser</button><div style="width:1px;background:#e5e7eb;height:24px;"></div><input type="color" value="#000000" id="color-picker" onchange="setColor(this.value)" style="width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;padding:0;" title="Pick color" /><div class="brush-size"><span>Size:</span><input type="range" min="1" max="20" value="4" id="brush-size" oninput="setBrushSize(this.value)" /><span id="brush-size-label">4</span></div></div>' +
-    '<canvas id="sketch-canvas" width="440" height="340"></canvas>' +
-    '<div class="sketch-actions"><button class="sketch-action-btn" onclick="undoSketch()">↩ Undo</button><button class="sketch-action-btn" onclick="saveSketch(' + lesson.id + ')">💾 Save</button><button class="sketch-action-btn danger" onclick="clearSketch()">🗑 Clear</button></div>' +
+    '<div class="sketch-tools">' +
+    '<button class="tool-btn active" id="tool-pen" onclick="setTool(\'pen\')">✏️ Pen</button>' +
+    '<button class="tool-btn" id="tool-eraser" onclick="setTool(\'eraser\')">⬜ Eraser</button>' +
+    '<div style="width:1px;background:#e5e7eb;height:24px;"></div>' +
+    '<input type="color" value="#000000" id="color-picker" onchange="setColor(this.value)" ' +
+    'style="width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;padding:0;" title="Pick color" />' +
+    '<div class="brush-size"><span>Size:</span>' +
+    '<input type="range" min="1" max="20" value="4" id="brush-size" oninput="setBrushSize(this.value)" />' +
+    '<span id="brush-size-label">4</span></div>' +
     '</div>' +
+    '<canvas id="sketch-canvas" width="440" height="340"></canvas>' +
+    '<div class="sketch-actions">' +
+    '<button class="sketch-action-btn" onclick="undoSketch()">↩ Undo</button>' +
+    '<button class="sketch-action-btn" onclick="saveSketch(' + lesson.id + ')">💾 Save</button>' +
+    '<button class="sketch-action-btn danger" onclick="clearSketch()">🗑 Clear</button>' +
+    '</div></div>' +
     completeButton(pageKey, isDone);
+
   initSketch(lesson.id);
 }
 
-// ===== REVIEW PAGE =====
+// ===== CHANGE 6: REVIEW PAGE — only main headings, NO themes shown, students write them =====
 function renderReviewPage(container, lesson, chapter) {
   const key = 'review_' + chapter.id;
   const pageKey = 'complete_review_' + chapter.id;
   const isDone = getUserKey(pageKey) === 'true';
   let data = {};
   try { data = JSON.parse(getUserKey(key) || '{}'); } catch(e) {}
-  container.innerHTML = lessonBanner(lesson) +
+
+  // CHANGE 6: Show ONLY the main heading title for the chapter — students write the themes themselves
+  container.innerHTML =
+    lessonBanner(lesson) +
     '<div class="page-title">Chapter ' + chapter.id + ': ' + chapter.title + ' Review</div>' +
     '<div class="review-page">' +
     '<p class="review-heading">List the two main headings:</p>' +
-    '<div><label style="font-size:0.85rem;color:#6b7280;">1.</label><input type="text" class="review-input" id="review-h1" placeholder="First main heading..." value="' + (data.heading1 || '') + '" oninput="saveReview(' + chapter.id + ', \'heading1\', this.value)" /></div>' +
-    '<div><label style="font-size:0.85rem;color:#6b7280;">2.</label><input type="text" class="review-input" id="review-h2" placeholder="Second main heading..." value="' + (data.heading2 || '') + '" oninput="saveReview(' + chapter.id + ', \'heading2\', this.value)" /></div>' +
-    '<p class="review-subheading">List the scriptures that support the two main headings:</p>' +
-    '<textarea class="review-textarea" id="review-sc" placeholder="List the supporting scriptures here..." oninput="saveReview(' + chapter.id + ', \'scriptures\', this.value)">' + (data.scriptures || '') + '</textarea>' +
+    '<div><label style="font-size:0.85rem;color:#6b7280;">1.</label>' +
+    '<input type="text" class="review-input" id="review-h1" placeholder="Write the first main heading..." ' +
+    'value="' + (data.heading1 || '') + '" oninput="saveReview(' + chapter.id + ', \'heading1\', this.value)" /></div>' +
+    '<div><label style="font-size:0.85rem;color:#6b7280;">2.</label>' +
+    '<input type="text" class="review-input" id="review-h2" placeholder="Write the second main heading..." ' +
+    'value="' + (data.heading2 || '') + '" oninput="saveReview(' + chapter.id + ', \'heading2\', this.value)" /></div>' +
+    '<p class="review-subheading" style="margin-top:12px;">List the scriptures that support the two main headings:</p>' +
+    '<textarea class="review-textarea" id="review-sc" placeholder="List the supporting scriptures here..." ' +
+    'oninput="saveReview(' + chapter.id + ', \'scriptures\', this.value)">' + (data.scriptures || '') + '</textarea>' +
     '<div class="save-row"><button class="save-btn" onclick="saveReviewAll(' + chapter.id + ')">💾 Save Review</button></div>' +
     '</div>' +
     completeButton(pageKey, isDone);
@@ -430,37 +501,63 @@ function saveReviewAll(chapterId) {
   setUserData(key, JSON.stringify(data));
 }
 
-// ===== PERSONAL APPLICATION PAGE =====
+// ===== CHANGE 7: PERSONAL APPLICATION — updated prompt text =====
 function renderPersonalAppPage(container, lesson, chapter) {
   const key = 'personal_' + chapter.id;
   const pageKey = 'complete_personal_' + chapter.id;
   const isDone = getUserKey(pageKey) === 'true';
   const saved = getUserKey(key) || '';
-  container.innerHTML = lessonBanner(lesson) +
+
+  // CHANGE 7: "Ask God for understanding and application of Chapter N, "Title," in your personal life."
+  const promptText = 'Ask God for understanding and application of Chapter ' + chapter.id +
+    ' \u201c' + chapter.title + '\u201d in your personal life. List the life applications as the Holy Spirit reveals them.';
+
+  container.innerHTML =
+    lessonBanner(lesson) +
     '<div class="page-title">Personal Application</div>' +
     '<div class="personal-app-page">' +
-    '<p style="font-size:0.92rem;color:#374151;line-height:1.7;">' + chapter.personalApplicationPrompt + '</p>' +
-    '<textarea class="review-textarea" id="personal-ta" style="min-height:200px;" placeholder="Write your personal application here as the Holy Spirit reveals..." oninput="setUserData(\'' + key + '\', this.value)">' + saved + '</textarea>' +
-    '<div class="save-row"><button class="save-btn" onclick="setUserData(\'' + key + '\', document.getElementById(\'personal-ta\').value)">💾 Save Application</button></div>' +
+    '<p style="font-size:0.92rem;color:#374151;line-height:1.7;">' + promptText + '</p>' +
+    '<textarea class="review-textarea" id="personal-ta" style="min-height:200px;" ' +
+    'placeholder="Write your personal life applications here as the Holy Spirit reveals..." ' +
+    'oninput="setUserData(\'' + key + '\', this.value)">' + saved + '</textarea>' +
+    '<div class="save-row">' +
+    '<button class="save-btn" onclick="setUserData(\'' + key + '\', document.getElementById(\'personal-ta\').value)">' +
+    '💾 Save Application</button></div>' +
     '</div>' +
     completeButton(pageKey, isDone);
 }
 
-// ===== GREATER WORKS PAGE =====
+// ===== CHANGE 8: GREATER WORKS — add "Read this" and "Declare this" sections =====
 function renderGreaterWorksPage(container, lesson) {
   const pageKey = 'complete_gw_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
-  container.innerHTML = lessonBanner(lesson) +
-    '<div class="greater-works-page"><p class="greater-works-text">' + APP_DATA.greaterWorks + '</p><div class="greater-works-affirmation">' + APP_DATA.greaterWorksAffirmation + '</div></div>' +
+
+  container.innerHTML =
+    lessonBanner(lesson) +
+    '<div class="greater-works-page">' +
+    '<div class="gw-read-section">' +
+    '<div class="gw-section-label">📖 Read this:</div>' +
+    '<p class="greater-works-text">' + APP_DATA.greaterWorks + '</p>' +
+    '</div>' +
+    '<div class="gw-declare-section">' +
+    '<div class="gw-section-label declare-label">🗣️ Declare this:</div>' +
+    '<div class="greater-works-affirmation">' +
+    'By the power of the Holy Spirit, I will do the greater works in Jesus\u2019 name.' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
     completeButton(pageKey, isDone);
 }
 
-// ===== TEST PAGE =====
+// ===== CHANGE 9: TEST PAGES — add text input field for writing knowledge =====
 function openTest(type) {
   const testData = type === 'pre' ? APP_DATA.preTest : APP_DATA.postTest;
   document.getElementById('nav-cp').textContent = type === 'pre' ? 'Pre-Test' : 'Post-Test';
   document.getElementById('nav-ls').textContent = '';
-  lessonPages = testData.days.map(day => ({ type: 'test', day, testType: type, title: testData.title, instruction: testData.instruction }));
+  lessonPages = testData.days.map(day => ({
+    type: 'test', day, testType: type,
+    title: testData.title, instruction: testData.instruction
+  }));
   currentPageIndex = 0;
   renderTestPage();
   showScreen('screen-lesson-pages');
@@ -470,17 +567,41 @@ function renderTestPage() {
   const page = lessonPages[currentPageIndex];
   const container = document.getElementById('page-content');
   if (page.type !== 'test') { renderPage(); return; }
+
   const { day, testType } = page;
   const pageKey = 'complete_test_' + testType + '_' + day.day;
   const isDone = getUserKey(pageKey) === 'true';
+
+  // Load saved text
+  const savedText = getUserKey('test_text_' + testType + '_' + day.day) || '';
+
+  // CHANGE 9: "Write your knowledge about each passage" with a text field
   container.innerHTML =
     '<div class="page-title">' + page.title + '</div>' +
     '<p style="font-size:0.85rem;color:#6b7280;text-align:center;padding:0 8px;">' + page.instruction + '</p>' +
-    '<div class="test-item"><div class="test-day-label">Day ' + day.day + '</div><div class="test-passage">Use your imagination to sketch ' + day.passage + '</div><div class="test-sketch-area"><canvas id="test-canvas-' + day.day + '" style="display:block;"></canvas></div></div>' +
-    '<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="sketch-action-btn" onclick="clearTestCanvas(' + day.day + ')">🗑 Clear</button><button class="sketch-action-btn" onclick="saveTestCanvas(' + day.day + ', \'' + testType + '\')">💾 Save</button></div>' +
+    '<div class="test-item">' +
+    '<div class="test-day-label">Day ' + day.day + '</div>' +
+    '<div class="test-passage">Use your imagination to sketch or write your knowledge about ' + day.passage + '</div>' +
+    '<div class="test-sketch-area"><canvas id="test-canvas-' + day.day + '" style="display:block;"></canvas></div>' +
+    '</div>' +
+    // CHANGE 9: text field for writing knowledge
+    '<div class="test-write-section">' +
+    '<div class="test-write-label">✍️ Write your knowledge about this passage:</div>' +
+    '<textarea class="test-write-field" placeholder="Write what you know about ' + day.passage + '..." ' +
+    'oninput="saveTestText(' + day.day + ', \'' + testType + '\', this.value)">' + savedText + '</textarea>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">' +
+    '<button class="sketch-action-btn" onclick="clearTestCanvas(' + day.day + ')">🗑 Clear</button>' +
+    '<button class="sketch-action-btn" onclick="saveTestCanvas(' + day.day + ', \'' + testType + '\')">💾 Save Sketch</button>' +
+    '</div>' +
     completeButton(pageKey, isDone);
+
   updateNextButton();
   setTimeout(() => initTestCanvas(day.day, testType), 100);
+}
+
+function saveTestText(day, type, value) {
+  setUserData('test_text_' + type + '_' + day, value);
 }
 
 // ===== PAGINATION =====
@@ -491,11 +612,9 @@ function prevPage() {
 }
 
 function nextPage() {
-  // Guard: must be complete
   const page = lessonPages[currentPageIndex];
   const pageKey = getPageKey(page);
   if (pageKey && getUserKey(pageKey) !== 'true') {
-    // Shake the complete button to draw attention
     const btn = document.getElementById('btn-complete-' + pageKey);
     if (btn) { btn.classList.add('shake'); setTimeout(() => btn.classList.remove('shake'), 600); }
     return;
@@ -554,39 +673,53 @@ function togglePlayPause() {
 function seekAudio(val) {}
 function adjustVolume() {}
 
-// ===== ANNOTATION TOOLBAR — fully fixed for mobile & screen edges =====
+// ===== CHANGE 2 & 3: ANNOTATION TOOLBAR =====
+// CHANGE 2: Add highlight color picker
+// CHANGE 3: Remove triangle (not working) — now only Highlight, Underline, Circle, Rectangle
 function createAnnotationToolbar() {
-  // Remove old if exists
   const old = document.getElementById('annotation-toolbar');
   if (old) old.remove();
 
   const toolbar = document.createElement('div');
   toolbar.id = 'annotation-toolbar';
   toolbar.className = 'annotation-toolbar';
-  // Use fixed positioning so it's always visible within viewport
+
+  // CHANGE 2: highlight color options + CHANGE 3: no triangle
   toolbar.innerHTML =
     '<div class="ann-toolbar-inner">' +
+    // Highlight with color picker
+    '<div class="ann-highlight-group">' +
     '<button class="ann-btn ann-highlight" onmousedown="annMouseDown(event,\'highlight\')">🖊 Highlight</button>' +
+    '<input type="color" id="highlight-color-picker" value="#fef08a" ' +
+    'title="Choose highlight color" class="ann-color-input" ' +
+    'onchange="updateHighlightColor(this.value)" />' +
+    '</div>' +
     '<button class="ann-btn ann-underline" onmousedown="annMouseDown(event,\'underline\')">U̲ Underline</button>' +
     '<button class="ann-btn ann-circle" onmousedown="annMouseDown(event,\'circle\')">○ Circle</button>' +
     '<button class="ann-btn ann-rect" onmousedown="annMouseDown(event,\'rect\')">□ Rectangle</button>' +
-    '<button class="ann-btn ann-triangle" onmousedown="annMouseDown(event,\'triangle\')">△ Triangle</button>' +
+    // CHANGE 3: Triangle REMOVED — was causing underline behaviour
     '<button class="ann-btn ann-close" onmousedown="annMouseDown(event,\'close\')">✕</button>' +
     '</div>';
+
   document.body.appendChild(toolbar);
+}
+
+// CHANGE 2: Current highlight color (default yellow)
+let currentHighlightColor = '#fef08a';
+
+function updateHighlightColor(val) {
+  currentHighlightColor = val;
 }
 
 let selectedRange = null;
 
-// Use mousedown on toolbar buttons so selection isn't lost before click fires
 function annMouseDown(e, type) {
-  e.preventDefault(); // prevent losing selection
+  e.preventDefault();
   if (type === 'close') { closeAnnotationToolbar(); return; }
   applyAnnotation(type);
 }
 
 function handleTextSelection(e) {
-  // Longer delay on touch devices
   const delay = e.type === 'touchend' ? 200 : 60;
   setTimeout(() => {
     const selection = window.getSelection();
@@ -604,28 +737,20 @@ function positionToolbar(e) {
   if (!toolbar) return;
 
   toolbar.classList.add('visible');
-
-  // Measure toolbar size (use fixed positioning = viewport coords)
   toolbar.style.visibility = 'hidden';
   toolbar.style.top = '0px';
   toolbar.style.left = '0px';
 
-  const tbW = toolbar.offsetWidth || 340;
+  const tbW = toolbar.offsetWidth || 360;
   const tbH = toolbar.offsetHeight || 56;
   const vW  = window.innerWidth;
   const vH  = window.innerHeight;
 
   let refTop, refLeft;
 
-  // Use viewport (client) coordinates because toolbar is position:fixed
   if (selectedRange) {
     const rect = selectedRange.getBoundingClientRect();
-    // Prefer above selection; if not enough room, show below
-    if (rect.top - tbH - 8 > 60) {
-      refTop = rect.top - tbH - 8;
-    } else {
-      refTop = rect.bottom + 8;
-    }
+    refTop  = (rect.top - tbH - 8 > 60) ? rect.top - tbH - 8 : rect.bottom + 8;
     refLeft = rect.left + (rect.width / 2) - (tbW / 2);
   } else if (e && e.changedTouches && e.changedTouches[0]) {
     refTop  = e.changedTouches[0].clientY - tbH - 12;
@@ -638,7 +763,6 @@ function positionToolbar(e) {
     refLeft = (vW - tbW) / 2;
   }
 
-  // Clamp strictly inside viewport
   refLeft = Math.max(6, Math.min(refLeft, vW - tbW - 6));
   refTop  = Math.max(58, Math.min(refTop, vH - tbH - 8));
 
@@ -649,17 +773,24 @@ function positionToolbar(e) {
 
 function applyAnnotation(type) {
   if (!selectedRange) { closeAnnotationToolbar(); return; }
+
   const classMap = {
     highlight: 'annotated-highlight',
     underline: 'annotated-underline',
     circle:    'annotated-circle',
-    rect:      'annotated-rect',
-    triangle:  'annotated-triangle'
+    rect:      'annotated-rect'
+    // CHANGE 3: triangle removed
   };
+
   const span = document.createElement('span');
   span.className = classMap[type];
+
+  // CHANGE 2: Apply selected highlight color
+  if (type === 'highlight') {
+    span.style.backgroundColor = currentHighlightColor;
+  }
+
   try {
-    // extractContents handles multi-word/multi-node selections correctly
     const fragment = selectedRange.extractContents();
     span.appendChild(fragment);
     selectedRange.insertNode(span);
@@ -683,7 +814,6 @@ function closeAnnotationToolbar() {
   selectedRange = null;
 }
 
-// Close toolbar on outside click/tap (not on toolbar or selectable text)
 document.addEventListener('mousedown', (e) => {
   const toolbar = document.getElementById('annotation-toolbar');
   if (!toolbar) return;
@@ -759,23 +889,24 @@ function draw(e) {
   lastX = p.x; lastY = p.y;
 }
 function endDraw(e) { if (!isDrawing) return; isDrawing = false; saveHistory(); }
-function setTool(t) { drawTool = t; document.getElementById('tool-pen').classList.toggle('active',t==='pen'); document.getElementById('tool-eraser').classList.toggle('active',t==='eraser'); }
+function setTool(t) { drawTool = t; document.getElementById('tool-pen').classList.toggle('active', t==='pen'); document.getElementById('tool-eraser').classList.toggle('active', t==='eraser'); }
 function setColor(v) { drawColor = v; drawTool = 'pen'; document.getElementById('tool-pen').classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); }
 function setBrushSize(v) { drawSize = parseInt(v); document.getElementById('brush-size-label').textContent = v; }
-function clearSketch() { if (!sketchCtx||!confirm('Clear the sketch? Cannot be undone.')) return; sketchCtx.fillStyle='#ffffff'; sketchCtx.fillRect(0,0,sketchCanvas.width,sketchCanvas.height); saveHistory(); }
+function clearSketch() { if (!sketchCtx || !confirm('Clear the sketch? Cannot be undone.')) return; sketchCtx.fillStyle = '#ffffff'; sketchCtx.fillRect(0,0,sketchCanvas.width,sketchCanvas.height); saveHistory(); }
 function saveSketch(id) { if (!sketchCanvas) return; setUserData('sketch_'+id, sketchCanvas.toDataURL('image/png')); }
 
 // ===== TEST CANVAS =====
 let testCanvases = {};
+
 function initTestCanvas(day, type) {
   const canvas = document.getElementById('test-canvas-' + day);
   if (!canvas) return;
   const maxW = Math.min(window.innerWidth - 48, 400);
-  canvas.width = maxW; canvas.height = 200;
+  canvas.width = maxW; canvas.height = 180;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   const saved = getUserKey('test_' + type + '_' + day);
-  if (saved) { const img = new Image(); img.onload = () => ctx.drawImage(img,0,0); img.src = saved; }
+  if (saved) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = saved; }
   testCanvases[day] = { canvas, ctx, isDrawing: false, lastX: 0, lastY: 0 };
   canvas.addEventListener('mousedown', e => startTestDraw(e, day));
   canvas.addEventListener('mousemove', e => drawTest(e, day));
@@ -784,16 +915,17 @@ function initTestCanvas(day, type) {
   canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTest(e, day); }, { passive: false });
   canvas.addEventListener('touchend', () => { if (testCanvases[day]) testCanvases[day].isDrawing = false; });
 }
-function startTestDraw(e, day) { const tc = testCanvases[day]; if (!tc) return; tc.isDrawing=true; const p=getPos(e,tc.canvas); tc.lastX=p.x; tc.lastY=p.y; }
+
+function startTestDraw(e, day) { const tc = testCanvases[day]; if (!tc) return; tc.isDrawing = true; const p = getPos(e, tc.canvas); tc.lastX = p.x; tc.lastY = p.y; }
 function drawTest(e, day) {
-  const tc = testCanvases[day]; if (!tc||!tc.isDrawing) return;
+  const tc = testCanvases[day]; if (!tc || !tc.isDrawing) return;
   const p = getPos(e, tc.canvas);
-  tc.ctx.beginPath(); tc.ctx.moveTo(tc.lastX,tc.lastY); tc.ctx.lineTo(p.x,p.y);
-  tc.ctx.strokeStyle='#000000'; tc.ctx.lineWidth=3; tc.ctx.lineCap='round'; tc.ctx.stroke();
-  tc.lastX=p.x; tc.lastY=p.y;
+  tc.ctx.beginPath(); tc.ctx.moveTo(tc.lastX, tc.lastY); tc.ctx.lineTo(p.x, p.y);
+  tc.ctx.strokeStyle = '#000000'; tc.ctx.lineWidth = 3; tc.ctx.lineCap = 'round'; tc.ctx.stroke();
+  tc.lastX = p.x; tc.lastY = p.y;
 }
-function clearTestCanvas(day) { const tc=testCanvases[day]; if(!tc) return; tc.ctx.fillStyle='#ffffff'; tc.ctx.fillRect(0,0,tc.canvas.width,tc.canvas.height); }
-function saveTestCanvas(day, type) { const tc=testCanvases[day]; if(!tc) return; setUserData('test_'+type+'_'+day, tc.canvas.toDataURL('image/png')); }
+function clearTestCanvas(day) { const tc = testCanvases[day]; if (!tc) return; tc.ctx.fillStyle = '#ffffff'; tc.ctx.fillRect(0, 0, tc.canvas.width, tc.canvas.height); }
+function saveTestCanvas(day, type) { const tc = testCanvases[day]; if (!tc) return; setUserData('test_' + type + '_' + day, tc.canvas.toDataURL('image/png')); }
 
 // ===== MODAL =====
 function showIntro() { document.getElementById('modal-intro').classList.remove('hidden'); }
