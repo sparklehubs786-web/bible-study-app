@@ -3,224 +3,127 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pricing — Destroying the Works of the Devil</title>
-<link rel="stylesheet" href="pricing.css"/>
+<title>Teacher Dashboard — Destroying the Works of the Devil</title>
+<link rel="stylesheet" href="dashboard.css"/>
 </head>
 <body>
 
-<div class="pricing-page">
-
-  <!-- HEADER -->
-  <div class="pricing-header">
-    <h1>🙏 Destroying the Works of the Devil</h1>
-    <p class="pricing-subtitle">Interactive Bible Study App — Choose Your Plan</p>
-  </div>
-
-  <!-- STUDENT PLAN -->
-  <section class="plan-section">
-    <h2 class="section-label student-label">👨‍🎓 For Students</h2>
-    <div class="plan-card student-card">
-      <div class="plan-badge">One Time Purchase</div>
-      <h3 class="plan-name">Student Access</h3>
-      <div class="plan-price">$7 <span>one time</span></div>
-      <ul class="plan-features">
-        <li>✅ Full access to all 12 chapters</li>
-        <li>✅ All 32 lessons with scripture & key terms</li>
-        <li>✅ Treasure chest, sketch page & question pages</li>
-        <li>✅ Audio read-aloud on every page</li>
-        <li>✅ Annotation tools — highlight, underline, circle</li>
-        <li>✅ Pre-test and Post-test</li>
-        <li>✅ Personal app access forever</li>
-        <li>✅ Works on any phone, tablet or computer</li>
-        <li>✅ Receive your access URL instantly by email</li>
-      </ul>
-      <button class="btn-buy student-btn" onclick="checkout('student')">
-        Get Student Access — $7
-      </button>
-      <p class="plan-note">One time payment. No monthly fees. Yours forever.</p>
-    </div>
-  </section>
-
-  <!-- TEACHER PLANS -->
-  <section class="plan-section">
-    <h2 class="section-label teacher-label">👨‍🏫 For Teachers & Group Leaders</h2>
-    <p class="teacher-intro">All teacher plans include a 3-month class period. At the end of 3 months the class expires and data is cleared. Renew anytime to start a fresh class.</p>
-
-    <div class="teacher-plans">
-
-      <!-- SMALL -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Small Group</div>
-        <h3 class="plan-name">Up to 15 Students</h3>
-        <div class="plan-price">$30 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 15 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_small')">
-          Get Small Group — $30
-        </button>
-      </div>
-
-      <!-- MEDIUM -->
-      <div class="plan-card teacher-card popular">
-        <div class="popular-badge">⭐ Most Popular</div>
-        <div class="plan-badge">Medium Group</div>
-        <h3 class="plan-name">Up to 30 Students</h3>
-        <div class="plan-price">$60 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 30 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_medium')">
-          Get Medium Group — $60
-        </button>
-      </div>
-
-      <!-- LARGE -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Large Group</div>
-        <h3 class="plan-name">Up to 60 Students</h3>
-        <div class="plan-price">$120 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 60 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_large')">
-          Get Large Group — $120
-        </button>
-      </div>
-
-      <!-- EXTRA LARGE -->
-      <div class="plan-card teacher-card">
-        <div class="plan-badge">Extra Large</div>
-        <h3 class="plan-name">Up to 100 Students</h3>
-        <div class="plan-price">$300 <span>/ 3 months</span></div>
-        <ul class="plan-features">
-          <li>✅ Up to 100 students in your class</li>
-          <li>✅ Unique class code for enrollment</li>
-          <li>✅ Teacher dashboard — view all students</li>
-          <li>✅ See every student's answers & notes</li>
-          <li>✅ Leave comments & grades per submission</li>
-          <li>✅ Letter grades or ministry grades</li>
-          <li>✅ Email notifications when submitted</li>
-          <li>✅ 3 month class period</li>
-        </ul>
-        <button class="btn-buy teacher-btn" onclick="checkout('teacher_xl')">
-          Get Extra Large — $300
-        </button>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section class="faq-section">
-    <h2 class="section-label">❓ Common Questions</h2>
-    <div class="faq-list">
-      <div class="faq-item">
-        <div class="faq-q">What happens after 3 months?</div>
-        <div class="faq-a">Your class expires and student submission data is cleared from the database. Students keep their personal app access forever. You simply renew to start a new class anytime.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">How do students join my class?</div>
-        <div class="faq-a">After purchasing, you receive a unique class code. Share it with your students. They log into the app, enter your class code, and they are instantly enrolled in your class.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Do students need to pay separately?</div>
-        <div class="faq-a">Yes. Each student purchases the $7 student plan which gives them full app access forever. The teacher plan covers the class management and submission features.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">How do I receive payments?</div>
-        <div class="faq-a">All payments are processed securely through Stripe and deposited directly into your bank account within 2 business days.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Can I upgrade my plan?</div>
-        <div class="faq-a">Yes. If your class grows you can upgrade your plan at any time and the difference will be applied to your account.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <div class="pricing-footer">
-    <p>© 2026 Leonard N. Cheeseborough — Raindrop International Distributors Enterprises</p>
-    <p>All payments secured by <strong>Stripe</strong> 🔒</p>
-    <div class="footer-links">
-      <a href="index.html">← Back to App</a>
-      <a href="teacher-login.html">Teacher Login</a>
-      <a href="dashboard.html">Teacher Dashboard</a>
-    </div>
-  </div>
-
-</div>
-
-<!-- STRIPE CHECKOUT MODAL -->
-<div id="checkout-modal" class="checkout-modal hidden">
-  <div class="checkout-box">
-    <button class="checkout-close" onclick="closeCheckout()">✕</button>
-    <h2 id="checkout-title">Complete Your Purchase</h2>
-    <div id="checkout-summary" class="checkout-summary"></div>
-
-    <div class="checkout-form">
-      <label>Full Name</label>
-      <input type="text" id="buyer-name" placeholder="Your full name" />
-
-      <label>Email Address</label>
-      <input type="email" id="buyer-email" placeholder="your@email.com" />
-
-      <label>Card Number</label>
-      <div id="stripe-card-element" class="stripe-input"></div>
-
-      <div class="card-row">
-        <div>
-          <label>Expiry</label>
-          <div id="stripe-expiry-element" class="stripe-input"></div>
-        </div>
-        <div>
-          <label>CVC</label>
-          <div id="stripe-cvc-element" class="stripe-input"></div>
-        </div>
-      </div>
-
-      <div id="stripe-error" class="stripe-error hidden"></div>
-
-      <button class="btn-pay" id="btn-pay" onclick="processPayment()">
-        🔒 Pay Securely
-      </button>
-      <p class="secure-note">🔒 Secured by Stripe. We never store your card details.</p>
-    </div>
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">🙏</div>
+    <h1>Teacher Login</h1>
+    <p class="login-sub">Sign in to access your class dashboard</p>
+    <button class="btn-google" onclick="loginWithGoogle()">
+      <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G" />
+      Sign in with Google
+    </button>
+    <p class="login-note">Don't have a teacher account? <a href="pricing.html">Purchase a plan →</a></p>
   </div>
 </div>
 
-<!-- SUCCESS MODAL -->
-<div id="success-modal" class="checkout-modal hidden">
-  <div class="checkout-box success-box">
-    <div class="success-icon">✅</div>
-    <h2>Payment Successful!</h2>
-    <p id="success-message"></p>
-    <button class="btn-buy student-btn" onclick="closeSuccess()">Continue</button>
+<!-- DASHBOARD SCREEN -->
+<div id="screen-dashboard" class="screen">
+
+  <!-- TOP NAV -->
+  <div class="dash-nav">
+    <div class="dash-nav-left">
+      <span class="dash-logo">🙏</span>
+      <span class="dash-title">Teacher Dashboard</span>
+    </div>
+    <div class="dash-nav-right">
+      <span id="teacher-name" class="teacher-name"></span>
+      <div class="class-code-badge" id="class-code-badge"></div>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-students">0</div>
+      <div class="stat-label">Students</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-submissions">0</div>
+      <div class="stat-label">Submissions</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-graded">0</div>
+      <div class="stat-label">Graded</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-days">0</div>
+      <div class="stat-label">Days Left</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="dash-content">
+
+    <!-- LEFT: Student List -->
+    <div class="student-panel">
+      <div class="panel-header">
+        <h2>My Students</h2>
+        <input type="text" class="search-input" placeholder="🔍 Search students..." oninput="filterStudents(this.value)" />
+      </div>
+      <div id="student-list" class="student-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Submission Detail -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty" id="detail-empty">
+        <div style="font-size:3rem;">📋</div>
+        <p>Select a student to view their submissions</p>
+      </div>
+      <div id="detail-content" class="hidden">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
   </div>
 </div>
 
-<script src="https://js.stripe.com/v3/"></script>
-<script src="pricing.js"></script>
+<!-- GRADE MODAL -->
+<div id="grade-modal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeGradeModal()">✕</button>
+    <h2>Grade Submission</h2>
+    <p id="grade-context" style="font-size:0.88rem;color:#4b5563;margin-bottom:16px;"></p>
+
+    <label class="grade-label">Grade Style</label>
+    <div class="grade-style-toggle">
+      <button class="grade-style-btn active" id="btn-letter" onclick="setGradeStyle('letter')">Letter Grade</button>
+      <button class="grade-style-btn" id="btn-ministry" onclick="setGradeStyle('ministry')">Ministry Grade</button>
+    </div>
+
+    <div id="letter-grades" class="grade-options">
+      <button class="grade-opt" onclick="selectGrade('A')">A</button>
+      <button class="grade-opt" onclick="selectGrade('B')">B</button>
+      <button class="grade-opt" onclick="selectGrade('C')">C</button>
+      <button class="grade-opt" onclick="selectGrade('D')">D</button>
+      <button class="grade-opt" onclick="selectGrade('F')">F</button>
+    </div>
+
+    <div id="ministry-grades" class="grade-options hidden">
+      <button class="grade-opt ministry" onclick="selectGrade('Excellent')">⭐ Excellent</button>
+      <button class="grade-opt ministry" onclick="selectGrade('Good')">👍 Good</button>
+      <button class="grade-opt ministry" onclick="selectGrade('Satisfactory')">✅ Satisfactory</button>
+      <button class="grade-opt ministry" onclick="selectGrade('Needs Improvement')">🔄 Needs Improvement</button>
+    </div>
+
+    <div id="grade-selected" class="grade-selected hidden"></div>
+
+    <label class="grade-label" style="margin-top:16px;">Comment / Encouragement</label>
+    <textarea id="grade-comment" class="grade-comment" placeholder="Write your feedback, encouragement or notes for this student..."></textarea>
+
+    <button class="btn-submit-grade" onclick="submitGrade()">✅ Submit Grade & Comment</button>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="dashboard.js"></script>
 </body>
 </html>
