@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Gateway to Heaven — Bible Game</title>
+<link rel="stylesheet" href="game.css"/>
+</head>
+<body>
 
+<!-- LOBBY SCREEN -->
+<div id="screen-lobby" class="screen active">
+  <div class="lobby-bg">
+    <div class="lobby-box">
+      <div class="game-title">
+        <div class="game-icon">⛪</div>
+        <h1>The Gateway<br>to Heaven</h1>
+        <p>Bible Scripture Memory Game</p>
+        <div class="game-meta">
+          <span>👥 2–4 Players</span>
+          <span>⏱ 20–30 Min</span>
+        </div>
+      </div>
+
+      <div class="lobby-actions">
+        <div class="action-card" onclick="showCreateGame()">
+          <div class="action-icon">🎮</div>
+          <h3>Create Game</h3>
+          <p>Start a new game and invite players</p>
+        </div>
+        <div class="action-card" onclick="showJoinGame()">
+          <div class="action-icon">🔗</div>
+          <h3>Join Game</h3>
+          <p>Enter a game code to join</p>
+        </div>
+      </div>
+
+      <!-- Create Game Form -->
+      <div id="create-form" class="lobby-form hidden">
+        <h3>Create New Game</h3>
+        <label>Your Name</label>
+        <input type="text" id="create-name" placeholder="Enter your name" />
+        <label>Pick Your Team Color</label>
+        <div class="color-picker">
+          <button class="color-opt orange active" data-color="orange" onclick="pickColor(this)">🟠 Orange</button>
+          <button class="color-opt red" data-color="red" onclick="pickColor(this)">🔴 Red</button>
+          <button class="color-opt green" data-color="green" onclick="pickColor(this)">🟢 Green</button>
+          <button class="color-opt blue" data-color="blue" onclick="pickColor(this)">🔵 Blue</button>
+        </div>
+        <button class="btn-action" onclick="createGame()">Create Game Room</button>
+      </div>
+
+      <!-- Join Game Form -->
+      <div id="join-form" class="lobby-form hidden">
+        <h3>Join a Game</h3>
+        <label>Your Name</label>
+        <input type="text" id="join-name" placeholder="Enter your name" />
+        <label>Game Code</label>
+        <input type="text" id="join-code" placeholder="e.g. GTH-1234" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;" />
+        <label>Pick Your Team Color</label>
+        <div class="color-picker">
+          <button class="color-opt orange active" data-color="orange" onclick="pickColor(this)">🟠 Orange</button>
+          <button class="color-opt red" data-color="red" onclick="pickColor(this)">🔴 Red</button>
+          <button class="color-opt green" data-color="green" onclick="pickColor(this)">🟢 Green</button>
+          <button class="color-opt blue" data-color="blue" onclick="pickColor(this)">🔵 Blue</button>
+        </div>
+        <button class="btn-action" onclick="joinGame()">Join Game</button>
+      </div>
+
+      <!-- Waiting Room -->
+      <div id="waiting-room" class="lobby-form hidden">
+        <h3>Game Room Created!</h3>
+        <div class="game-code-display" id="game-code-display"></div>
+        <p style="font-size:0.85rem;color:#4b5563;text-align:center;">Share this code with other players</p>
+        <div id="waiting-players" class="waiting-players"></div>
+        <button class="btn-action" id="btn-start-game" onclick="startGame()" style="display:none;">▶ Start Game</button>
+        <p id="waiting-msg" style="font-size:0.82rem;color:#9ca3af;text-align:center;margin-top:8px;">Waiting for players to join...</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="screen-game" class="screen">
+
+  <!-- Game Header -->
+  <div class="game-header">
+    <div class="game-header-left">
+      <span style="font-size:1.1rem;">⛪</span>
+      <span class="game-header-title">Gateway to Heaven</span>
+    </div>
+    <div class="turn-indicator" id="turn-indicator">Orange Team's Turn</div>
+    <button class="btn-menu" onclick="if(confirm('Leave game?')) location.reload()">✕ Exit</button>
+  </div>
+
+  <!-- Player Scores -->
+  <div class="score-bar" id="score-bar"></div>
+
+  <!-- BOARD -->
+  <div class="board-container">
+    <div class="board" id="game-board"></div>
+  </div>
+
+  <!-- Card Area -->
+  <div class="card-area" id="card-area">
+    <div class="card-prompt" id="card-prompt">
+      <p id="prompt-text">Tap "Draw Card" when it's your turn</p>
+    </div>
+    <div class="card-actions">
+      <button class="btn-draw" id="btn-draw" onclick="drawCard()">🃏 Draw Card</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- CARD MODAL -->
+<div id="card-modal" class="card-modal hidden">
+  <div class="card-modal-box">
+    <div class="card-header">
+      <div class="card-level-badge" id="card-level-badge">Level 1</div>
+      <div class="card-reference" id="card-reference">Isaiah 40:28</div>
+    </div>
+    <div class="card-scripture" id="card-scripture"></div>
+    <div class="card-question-box">
+      <div class="card-q-label">📖 Recite or Answer:</div>
+      <div class="card-question" id="card-question"></div>
+    </div>
+    <div class="card-answers">
+      <button class="btn-correct" onclick="answerResult(true)">✅ Correct! Place Peg</button>
+      <button class="btn-wrong" onclick="answerResult(false)">❌ Incorrect</button>
+    </div>
+    <p style="font-size:0.72rem;color:#9ca3af;text-align:center;margin-top:8px;">All players vote on the answer</p>
+  </div>
+</div>
+
+<!-- WIN MODAL -->
+<div id="win-modal" class="card-modal hidden">
+  <div class="card-modal-box win-box">
+    <div class="win-icon">🏆</div>
+    <h2 id="win-title">Winner!</h2>
+    <p id="win-message"></p>
+    <button class="btn-draw" onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
