@@ -731,6 +731,7 @@ body {
   .btn-prev, .btn-next { padding: 10px 14px; font-size: 0.9rem; }
   .lesson-image        { max-height: 36dvh; }
 }
+
 /* ===== CHANGE 2: Highlight color input in toolbar ===== */
 .ann-highlight-group {
   display: flex;
@@ -809,3 +810,43 @@ body {
   transition: border-color 0.2s;
 }
 .test-write-field:focus { border-color: #7c3aed; background: #fff; }
+
+/* ===== BOTTOM NAV — CONTENT PADDING FIX =====
+   Prevents bottom nav bar from covering page content on ALL screens.
+   The nav is ~64px tall + iOS safe area. We add 72px padding to bottom
+   of every scrollable area so the last item is never hidden. */
+
+/* All scrollable screens get bottom padding */
+.select-list,
+.page-content,
+.lesson-intro-scroll {
+  padding-bottom: 80px !important;
+}
+
+/* Home screen — START button needs clearance */
+#screen-home {
+  padding-bottom: 80px !important;
+}
+
+/* Nav footer (Prev/Next) — sit above bottom nav */
+.nav-footer {
+  bottom: 64px !important;
+  bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Save indicator — sit above bottom nav */
+.save-indicator {
+  bottom: 76px !important;
+  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Select book / select lesson scroll fix */
+#screen-select-book,
+#screen-select-lesson {
+  padding-bottom: 0;
+}
+
+/* Annotation toolbar stays above bottom nav */
+#annotation-toolbar {
+  z-index: 99999 !important;
+}
