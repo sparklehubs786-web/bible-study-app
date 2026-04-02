@@ -10,7 +10,7 @@ const APP_DATA = {
     title: "Pre-Test: Prior Knowledge",
     instruction: "Take the pre-test to determine your prior knowledge of each passage. Use your imagination to sketch or write your knowledge about each passage without using any resources. The post test will be taken after completing the Destroying the Works of the Devil Workbook to measure what you have learned.",
     days: [
-      { day: 1, passage: "Luke 4:18-19" },
+      { day: 1, passage: "Luke 4:16-21" },
       { day: 2, passage: "Luke 4:40-42" },
       { day: 3, passage: "Luke 5:12-15" },
       { day: 4, passage: "Luke 17:11-19" },
@@ -49,7 +49,7 @@ const APP_DATA = {
     title: "Post-Test of the Book of Luke",
     instruction: "Now that you have completed the Destroying the Works of the Devil Workbook, take the post-test to measure what you have learned. Use your imagination to sketch or write your knowledge about each passage.",
     days: [
-      { day: 1, passage: "Luke 4:18-19" },
+      { day: 1, passage: "Luke 4:16-21" },
       { day: 2, passage: "Luke 4:40-42" },
       { day: 3, passage: "Luke 5:12-15" },
       { day: 4, passage: "Luke 17:11-19" },
@@ -90,7 +90,7 @@ const APP_DATA = {
       title: "Christ's Ministry",
       image: null,
       lessons: [1, 2],
-      lessonThemes: ["Luke 4:18-19 — Jesus began his ministry.", "Luke 4:40-42 — Christ laid his hands on everyone."],
+      lessonThemes: ["Luke 4:16-21 — Jesus began his ministry.", "Luke 4:40-42 — Christ laid his hands on everyone."],
       reviewHeadings: ["Jesus began his ministry.", "Jesus laid hands on everyone."],
       reviewScriptures: `Luke 4:18 — "The Spirit of the Lord is upon me, because he hath anointed me to preach the gospel to the poor; he hath sent me to heal the brokenhearted, to preach deliverance to the captives, and recovering of sight to the blind, to set at liberty them that are bruised..."\n\nMatthew 8:16-17 — "When the even was come, they brought unto him many that were possessed with devils: and he cast out the spirits with his word, and healed all that were sick: That it might be fulfilled which was spoken by Esaias the prophet, saying, Himself took our infirmities, and bare our sicknesses."`,
       personalApplicationPrompt: `Ask God for the understanding and application of Chapter 1 "Christ's Ministry" for your personal life. List the life application(s) as the Holy Spirit reveals them.`
@@ -213,7 +213,7 @@ const APP_DATA = {
       chapterId: 1,
       number: 1,
       title: "Jesus Began His Ministry",
-      passage: "Luke 4:18-19",
+      passage: "Luke 4:16-21",
       additionalPassages: "Isaiah 61:1-3",
       theme: "Jesus began his ministry.",
       image: "color_4_18_19.jpg",
