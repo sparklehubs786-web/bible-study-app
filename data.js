@@ -217,28 +217,35 @@ const APP_DATA = {
       additionalPassages: "Isaiah 61:1-3",
       theme: "Jesus began his ministry.",
       image: "color_4_18_19.jpg",
-      scripture: `Luke 4:18-19 — The Spirit of the Lord is upon me, because he hath anointed me to preach the gospel to the poor; he hath sent me to heal the brokenhearted, to preach deliverance to the captives, and recovering of sight to the blind, to set at liberty them that are bruised, To preach the acceptable year of the Lord.`,
+      scripture: `Luke 4:16-21 — And he came to Nazareth, where he had been brought up: and, as his custom was, he went into the synagogue on the sabbath day, and stood up for to read. And there was delivered unto him the book of the prophet Esaias. And when he had opened the book, he found the place where it was written, The Spirit of the Lord is upon me, because he hath anointed me to preach the gospel to the poor; he hath sent me to heal the brokenhearted, to preach deliverance to the captives, and recovering of sight to the blind, to set at liberty them that are bruised, To preach the acceptable year of the Lord. And he closed the book, and he gave it again to the minister, and sat down. And the eyes of all them that were in the synagogue were fastened on him. And he began to say unto them, This day is this scripture fulfilled in your ears.`,
       keyTerms: [
-        { word: "Upon", definition: "on, at, by, of position, or over." },
-        { word: "Spirit", definition: "the third person of the triune God, the Holy Spirit, coequal, coeternal with the Father and the Son." },
-        { word: "Anointed", definition: "enduing Christians with the gifts of the Holy Spirit." },
-        { word: "Poor", definition: "destitute of wealth, influence, position, honour, lowly, afflicted, destitute of the Christian virtues and eternal riches, helpless, powerless to accomplish an end, or lacking in anything." },
-        { word: "Sent", definition: "to order one to go to a place appointed, to send away, dismiss, to allow one to depart, that he may be in a state of liberty, to drive away or send off." },
-        { word: "Heal", definition: "to cure, to make whole, to free from errors and sins, or to bring about one's salvation." },
-        { word: "Brokenhearted", definition: "break, to break in pieces, shiver, to tread down, to break down, crush, to tear one's body and shatter one's strength." },
-        { word: "Deliverance", definition: "release from bondage or imprisonment, forgiveness or pardon, of sins, remission of the penalty." },
-        { word: "Blind", definition: "A physical or mental disease." },
-        { word: "Set", definition: "to order one to go to a place appointed, to send away, dismiss, to allow one to depart, that he may be in a state of liberty." }
+        { word: "Nazareth", definition: "the guarded one and the ordinary residence and home town of Christ." },
+        { word: "Custom", definition: "to be accustomed, used, that which is wont, as his custom was, or as his manner was." },
+        { word: "Synagogue", definition: "a bringing together, gathering (as of fruits); in the NT, an assembling together of men, an assembly of Jews formally gathered together to offer prayers and listen to the reading and expositions of the scriptures." },
+        { word: "Read", definition: "to distinguish between, to recognise, to know accurately, or to acknowledge." },
+        { word: "Delivered", definition: "to hand, give by hand; to give over; give up to the power or will of one." },
+        { word: "Book", definition: "a scroll, a written document; a sheet on which something has been written or a bill of divorcement." },
+        { word: "Esaias", definition: "Jehovah's help; a famous Hebrew prophet who prophesied in the reigns of Uzziah, Jotham, Ahaz, and Hezekiah." },
+        { word: "Opened", definition: "to unroll; the books of the Hebrews were rolls fastened to one or two smooth rods and furnished with handles, so that they could be rolled up and unrolled." },
+        { word: "Found", definition: "to come upon, hit upon, to meet with; after searching, to find a thing sought; without previous search, to find (by chance), to fall in with." },
+        { word: "Closed", definition: "to fold together, or roll up." },
+        { word: "Minister", definition: "servant; an underrower, subordinate rower; any one who serves with hands, in the NT of the officers and attendants of magistrates; of the attendants of a king; of the attendant of a synagogue." },
+        { word: "Fastened", definition: "to fix the eyes on, gaze upon; to look into anything or metaphorically to fix one's mind on one as an example." },
+        { word: "Scripture", definition: "a writing, thing written; used to denote either the book itself, or its contents; a certain portion or section of the Holy Scripture." },
+        { word: "Fulfilled", definition: "to make full, to fill up; to cause to abound, to furnish or supply liberally; to render full, to complete; fill to the brim so that nothing shall be wanting to full measure." }
       ],
       treasureChestNote: "Read and Take Notes @ Luke 4:18-19; Isaiah 61:1-3\nTheme: Jesus began his ministry.",
       questions: [
-        "Where did the event take place?",
-        "What did the man have inside of him?",
-        "What did the unclean spirit say unto Jesus?",
-        "What did the unclean spirit know about Jesus?",
-        "How did Jesus rebuke the unclean spirit?",
-        "What five things did the unclean spirit do unto the man?",
-        "Why did the people think that Jesus was ushering a new doctrine?"
+        "According to verse 16, what was Jesus' custom, and what does this reveal about His spiritual lifestyle?",
+        "Where did Jesus go to read, and based on the definition of synagogue, what was the purpose of this gathering?",
+        "What was delivered to Jesus, and what does this action suggest about His role and authority in the synagogue?",
+        "Who is Esaias (Isaiah), and why is it significant that Jesus read from his writings?",
+        "Based on the definition of 'opened' (to unroll), what does this tell you about how Scripture was handled in Jesus' time?",
+        "What does the word 'found' suggest about Jesus locating the passage — was it random, or intentional? Explain your answer.",
+        "Define 'read' (to recognize or acknowledge accurately). How does this deepen your understanding of Jesus reading the Scripture?",
+        "In verses 18–19, list at least four things Jesus said He was anointed to do. What does this reveal about His mission?",
+        "What does it mean that the eyes of the people were 'fastened' on Him (v. 20)? What does this indicate about the atmosphere in the room?",
+        "In verse 21, Jesus says, 'This day is this scripture fulfilled in your ears.' What is the main point of this statement, and what is Jesus declaring about Himself?"
       ]
     },
     {
@@ -613,13 +620,16 @@ const APP_DATA = {
       ],
       treasureChestNote: "Read and Take Notes @ Luke 4:33-36; Mark 1:23-28\nTheme: Hold your Peace and Come Out.",
       questions: [
-        "Where did the event take place?",
-        "What did the man have inside of him?",
-        "What did the unclean spirit say unto Jesus?",
-        "What did the unclean spirit know about Jesus?",
-        "How did Jesus rebuke the unclean spirit?",
-        "What five things did the unclean spirit do unto the man?",
-        "Why did the people think that Jesus was ushering a new doctrine?"
+        "According to verse 16, what was Jesus' custom, and what does this reveal about His spiritual lifestyle?",
+        "Where did Jesus go to read, and based on the definition of synagogue, what was the purpose of this gathering?",
+        "What was delivered to Jesus, and what does this action suggest about His role and authority in the synagogue?",
+        "Who is Esaias (Isaiah), and why is it significant that Jesus read from his writings?",
+        "Based on the definition of 'opened' (to unroll), what does this tell you about how Scripture was handled in Jesus' time?",
+        "What does the word 'found' suggest about Jesus locating the passage — was it random, or intentional? Explain your answer.",
+        "Define 'read' (to recognize or acknowledge accurately). How does this deepen your understanding of Jesus reading the Scripture?",
+        "In verses 18–19, list at least four things Jesus said He was anointed to do. What does this reveal about His mission?",
+        "What does it mean that the eyes of the people were 'fastened' on Him (v. 20)? What does this indicate about the atmosphere in the room?",
+        "In verse 21, Jesus says, 'This day is this scripture fulfilled in your ears.' What is the main point of this statement, and what is Jesus declaring about Himself?"
       ]
     },
     {
