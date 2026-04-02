@@ -1,6 +1,6 @@
 // ===== STRIPE CONFIGURATION =====
 // IMPORTANT: Replace with your actual Stripe publishable key from stripe.com/dashboard
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_YOUR_STRIPE_KEY_HERE';
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51QusvZP4hTfH1U7GvbT8ITnyB2ttEEmlKpSIqgv3fc7nPS3pQ5BbQ0dn50PnTGWhgYIGr3z6CgZ4A2KA2oUhjAYP00HJ5K4TFa';
 
 // Plan details
 const PLANS = {
