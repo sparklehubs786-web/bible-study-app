@@ -186,17 +186,35 @@
       <label>Email Address</label>
       <input type="email" id="buyer-email" placeholder="your@email.com" />
 
-      <label>Card Number</label>
-      <div id="stripe-card-element" class="stripe-input"></div>
-
-      <div class="card-row">
-        <div>
-          <label>Expiry</label>
-          <div id="stripe-expiry-element" class="stripe-input"></div>
+      <!-- Real Stripe fields (shown when Stripe key is set) -->
+      <div id="stripe-real-fields" style="display:none;">
+        <label>Card Number</label>
+        <div id="stripe-card-element" class="stripe-input"></div>
+        <div class="card-row">
+          <div><label>Expiry</label><div id="stripe-expiry-element" class="stripe-input"></div></div>
+          <div><label>CVC</label><div id="stripe-cvc-element" class="stripe-input"></div></div>
         </div>
-        <div>
-          <label>CVC</label>
-          <div id="stripe-cvc-element" class="stripe-input"></div>
+      </div>
+
+      <!-- Demo fields (shown when no Stripe key) -->
+      <div id="stripe-demo-fields" style="display:block;">
+        <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;font-size:0.8rem;font-weight:700;color:#92400e;margin-bottom:10px;">
+          🔧 Demo Mode — Use test card below. Add your Stripe key to enable real payments.
+        </div>
+        <label>Card Number (Test)</label>
+        <input type="text" id="demo-card" class="stripe-input" value="4242 4242 4242 4242"
+          style="width:100%;border:2px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.95rem;font-family:monospace;" />
+        <div class="card-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <div>
+            <label>Expiry</label>
+            <input type="text" placeholder="12/28" value="12/28"
+              style="width:100%;border:2px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.95rem;" />
+          </div>
+          <div>
+            <label>CVC</label>
+            <input type="text" placeholder="123" value="123"
+              style="width:100%;border:2px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.95rem;" />
+          </div>
         </div>
       </div>
 
