@@ -134,12 +134,34 @@
 <script src="data.js"></script>
 <script src="app.js"></script>
 
-<!-- BOTTOM NAV LINKS -->
+<!-- SMART BOTTOM NAV — shows correct dashboard based on login -->
 <div id="bottom-nav" style="position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:#1f2937;padding:10px 8px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:9999;border-top:2px solid #374151;box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
-  <a href="pricing.html" style="color:#a5b4fc;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">💳</span>Pricing</a>
-  <a href="student.html" style="color:#86efac;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">👤</span>Student</a>
-  <a href="dashboard.html" style="color:#a5b4fc;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">👨‍🏫</span>Teacher</a>
+  <a href="pricing.html" style="color:#86efac;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">💳</span>Pricing</a>
+  <a id="nav-my-account" href="auth.html" style="color:#a5b4fc;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">👤</span><span id="nav-account-label">Login</span></a>
   <a href="game.html" style="color:#fbbf24;font-size:0.68rem;font-weight:700;text-decoration:none;text-align:center;padding:4px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:1.1rem;">⛪</span>Game</a>
 </div>
+<script>
+// Smart nav: show correct dashboard link based on who is logged in
+(function() {
+  try {
+    var student = localStorage.getItem('dtwd_student');
+    var teacher = localStorage.getItem('dtwd_teacher');
+    var navLink  = document.getElementById('nav-my-account');
+    var navLabel = document.getElementById('nav-account-label');
+    if (teacher) {
+      navLink.href  = 'dashboard.html';
+      navLink.querySelector('span:first-child').textContent = '👨‍🏫';
+      navLabel.textContent = 'Teacher';
+    } else if (student) {
+      navLink.href  = 'student.html';
+      navLink.querySelector('span:first-child').textContent = '👤';
+      navLabel.textContent = 'My Account';
+    } else {
+      navLink.href  = 'auth.html';
+      navLabel.textContent = 'Login';
+    }
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>
