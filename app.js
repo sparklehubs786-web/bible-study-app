@@ -675,10 +675,17 @@ function nextPage() {
 }
 
 function renderCurrentPage() {
+  // Remove any existing pen canvas when navigating
+  const pc = document.getElementById('pen-overlay-canvas');   if(pc) pc.remove();
+  const pd = document.getElementById('pen-display-canvas');   if(pd) pd.remove();
+  const pt = document.getElementById('pen-draw-toolbar');     if(pt) pt.remove();
+  penDrawMode = false; penDrawing = false;
+
   const page = lessonPages[currentPageIndex];
   if (page && page.type === 'test') renderTestPage();
   else renderPage();
   window.scrollTo(0, 0);
+  setTimeout(restorePenLayer, 400);
 }
 
 // ===== AUDIO / TTS =====
@@ -767,9 +774,13 @@ function annMouseDown(e, type) {
   e.preventDefault();
   if (type === 'close') { closeAnnotationToolbar(); return; }
   if (type === 'pen') {
-    // For pen: show a quick color picker and enable canvas draw mode
-    alert('Pen tool: Select text first, then use Pen to draw. For freehand drawing use the Sketch page.');
-    closeAnnotationToolbar(); return;
+    // Toggle pen draw mode on/off
+    if (penDrawMode) {
+      stopPenDraw();
+    } else {
+      startPenDraw();
+    }
+    return;
   }
   applyAnnotation(type);
 }
@@ -871,24 +882,159 @@ function closeAnnotationToolbar() {
   selectedRange = null;
 }
 
-// ===== PEN DRAWING OVERLAY =====
-let isPenDrawing = false;
-let penCanvas = null;
-let penCtx = null;
+// ===== FREEHAND PEN DRAW OVERLAY =====
+let penDrawMode  = false;
+let penDrawing   = false;
+let penCanvas    = null;
+let penCtx       = null;
+let penColor     = '#e11d48';
+let penSize      = 2.5;
+let penLastX     = 0;
+let penLastY     = 0;
+let penDrawKey   = null; // storage key for this page
 
-function startPenOverlay(container) {
+function updatePenColor(v) { penColor = v; if(penCtx) penCtx.strokeStyle = v; }
+
+function startPenDraw() {
+  penDrawMode = true;
+  closeAnnotationToolbar();
+
+  // Show pen color picker and toolbar
+  const existing = document.getElementById('pen-draw-toolbar');
+  if (existing) existing.remove();
+
+  const tb = document.createElement('div');
+  tb.id = 'pen-draw-toolbar';
+  tb.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1f2937;border-radius:40px;padding:8px 16px;display:flex;align-items:center;gap:12px;z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,.5);';
+  tb.innerHTML =
+    '<span style="color:#fbbf24;font-size:.78rem;font-weight:700;">✏️ Draw Mode ON</span>' +
+    '<input type="color" value="'+penColor+'" onchange="updatePenColor(this.value)" style="width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;padding:0;" title="Pen color"/>' +
+    '<input type="range" min="1" max="8" value="'+penSize+'" oninput="penSize=parseFloat(this.value);if(penCtx)penCtx.lineWidth=penSize;" style="width:70px;" title="Pen size"/>' +
+    '<button onclick="clearPenLayer()" style="padding:4px 10px;background:#ef4444;color:#fff;border:none;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;">🗑 Clear</button>' +
+    '<button onclick="savePenLayer()" style="padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;">💾 Save</button>' +
+    '<button onclick="stopPenDraw()" style="padding:4px 10px;background:#6b7280;color:#fff;border:none;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;">✕ Done</button>';
+  document.body.appendChild(tb);
+
+  // Create or reuse canvas over the page content
+  createPenCanvas();
+}
+
+function createPenCanvas() {
   const existing = document.getElementById('pen-overlay-canvas');
   if (existing) existing.remove();
-  const target = container || document.querySelector('.scripture-box, .key-term-item');
-  if (!target) return;
-  const rect = target.getBoundingClientRect();
+
+  // Cover the full page content area
+  const contentEl = document.getElementById('page-content') || document.querySelector('.screen.active');
+  if (!contentEl) return;
+
   penCanvas = document.createElement('canvas');
   penCanvas.id = 'pen-overlay-canvas';
-  penCanvas.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;z-index:999;pointer-events:none;';
-  penCanvas.width = rect.width; penCanvas.height = rect.height;
+
+  const rect = contentEl.getBoundingClientRect();
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+  penCanvas.style.cssText = 'position:absolute;top:'+( rect.top + scrollTop )+'px;left:'+rect.left+'px;width:'+rect.width+'px;height:'+Math.max(rect.height, contentEl.scrollHeight)+'px;z-index:500;cursor:crosshair;touch-action:none;';
+  penCanvas.width  = rect.width;
+  penCanvas.height = Math.max(rect.height, contentEl.scrollHeight);
+
   document.body.appendChild(penCanvas);
+
   penCtx = penCanvas.getContext('2d');
-  penCtx.strokeStyle = '#dc2626'; penCtx.lineWidth = 2; penCtx.lineCap = 'round';
+  penCtx.strokeStyle = penColor;
+  penCtx.lineWidth   = penSize;
+  penCtx.lineCap     = 'round';
+  penCtx.lineJoin    = 'round';
+
+  // Restore saved pen layer
+  const page = lessonPages[currentPageIndex];
+  if (page && page.lesson) {
+    penDrawKey = 'pen_draw_' + page.type + '_' + page.lesson.id;
+    const saved = getUserKey(penDrawKey);
+    if (saved) {
+      const img = new Image();
+      img.onload = () => penCtx.drawImage(img, 0, 0);
+      img.src = saved;
+    }
+  }
+
+  // Events
+  penCanvas.addEventListener('mousedown',  penStart,  { passive:false });
+  penCanvas.addEventListener('mousemove',  penMove,   { passive:false });
+  penCanvas.addEventListener('mouseup',    penEnd,    { passive:false });
+  penCanvas.addEventListener('mouseleave', penEnd,    { passive:false });
+  penCanvas.addEventListener('touchstart', penStart,  { passive:false });
+  penCanvas.addEventListener('touchmove',  penMove,   { passive:false });
+  penCanvas.addEventListener('touchend',   penEnd,    { passive:false });
+}
+
+function getPenPos(e) {
+  const rect = penCanvas.getBoundingClientRect();
+  if (e.touches && e.touches[0]) {
+    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function penStart(e) { e.preventDefault(); penDrawing=true; const p=getPenPos(e); penLastX=p.x; penLastY=p.y; }
+function penMove(e) {
+  e.preventDefault();
+  if (!penDrawing || !penCtx) return;
+  const p = getPenPos(e);
+  penCtx.beginPath();
+  penCtx.moveTo(penLastX, penLastY);
+  penCtx.lineTo(p.x, p.y);
+  penCtx.stroke();
+  penLastX = p.x; penLastY = p.y;
+}
+function penEnd(e) { penDrawing = false; savePenLayer(); }
+
+function clearPenLayer() {
+  if (!penCtx || !penCanvas) return;
+  penCtx.clearRect(0, 0, penCanvas.width, penCanvas.height);
+  if (penDrawKey) setUserData(penDrawKey, '');
+}
+
+function savePenLayer() {
+  if (!penCanvas || !penDrawKey) return;
+  try { setUserData(penDrawKey, penCanvas.toDataURL('image/png')); } catch(e) {}
+}
+
+function stopPenDraw() {
+  penDrawMode = false;
+  penDrawing  = false;
+  savePenLayer();
+  const canvas = document.getElementById('pen-overlay-canvas');
+  if (canvas) canvas.remove();
+  const tb = document.getElementById('pen-draw-toolbar');
+  if (tb) tb.remove();
+}
+
+// Restore pen drawing when page renders
+function restorePenLayer() {
+  const page = lessonPages[currentPageIndex];
+  if (!page || !page.lesson) return;
+  const key = 'pen_draw_' + page.type + '_' + page.lesson.id;
+  const saved = getUserKey(key);
+  if (!saved) return;
+  setTimeout(() => {
+    if (penDrawMode) return; // already has live canvas
+    const contentEl = document.getElementById('page-content');
+    if (!contentEl) return;
+    const rect = contentEl.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const displayCanvas = document.createElement('canvas');
+    displayCanvas.id = 'pen-display-canvas';
+    displayCanvas.style.cssText = 'position:absolute;top:'+(rect.top+scrollTop)+'px;left:'+rect.left+'px;width:'+rect.width+'px;height:'+Math.max(rect.height,contentEl.scrollHeight)+'px;z-index:100;pointer-events:none;';
+    displayCanvas.width  = rect.width;
+    displayCanvas.height = Math.max(rect.height, contentEl.scrollHeight);
+    const existing = document.getElementById('pen-display-canvas');
+    if (existing) existing.remove();
+    document.body.appendChild(displayCanvas);
+    const ctx = displayCanvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = saved;
+  }, 300);
 }
 
 // ===== ANNOTATION SAVE/RESTORE =====
