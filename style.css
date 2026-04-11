@@ -850,3 +850,75 @@ body {
 #annotation-toolbar {
   z-index: 99999 !important;
 }
+
+/* ===== SKETCH DUAL PROMPT ===== */
+.sketch-dual-prompt {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.sketch-prompt-top {
+  font-size: 0.88rem; color: #374151;
+  font-style: italic; margin-bottom: 4px;
+}
+.sketch-or-divider {
+  font-size: 0.78rem; color: #9ca3af;
+  font-weight: 700; margin: 6px 0;
+}
+.sketch-prompt-bottom {
+  font-size: 0.88rem; color: #5b21b6;
+  font-weight: 700;
+}
+
+/* ===== SKETCH WRITE SECTION ===== */
+.sketch-write-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  border-left: 4px solid #7c3aed;
+}
+.sketch-write-label {
+  font-size: 0.82rem; font-weight: 700;
+  color: #5b21b6; margin-bottom: 8px;
+}
+.sketch-write-field {
+  width: 100%; border: 2px solid #e5e7eb;
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 0.88rem; color: #1f2937;
+  resize: vertical; min-height: 80px;
+  font-family: inherit; outline: none;
+  background: #f9fafb; transition: border-color 0.2s;
+}
+.sketch-write-field:focus { border-color: #7c3aed; background: #fff; }
+
+/* ===== SUBMIT TO TEACHER BUTTON ===== */
+.submit-teacher-btn {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 12px 24px; font-size: 0.92rem;
+  font-weight: 800; cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+}
+.submit-teacher-btn:hover { transform: translateY(-2px); }
+.submit-teacher-btn:active { transform: scale(0.97); }
+
+/* ===== ANN PEN BUTTON ===== */
+.ann-pen {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #d97706 !important;
+}
+
+/* ===== ANSWER on independent work ===== */
+.independent-note {
+  background: #f0fdf4; border: 1px solid #86efac;
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 0.8rem; color: #15803d; font-weight: 600;
+  margin-top: 8px;
+}
