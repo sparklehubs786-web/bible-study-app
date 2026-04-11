@@ -339,6 +339,7 @@ function renderKeyTermsPage(container, lesson) {
     el.addEventListener('touchend', handleTextSelection);
   });
   document.getElementById('nav-audio-btn').setAttribute('data-text', audioText);
+  restoreAnnotations('keyterms_' + lesson.id);
 }
 
 // ===== TREASURE CHEST =====
@@ -860,6 +861,8 @@ function applyAnnotation(type) {
     console.warn('Annotation error:', err);
   }
   closeAnnotationToolbar();
+  // Auto-save annotations immediately after applying
+  setTimeout(autoSaveAnnotations, 100);
 }
 
 function closeAnnotationToolbar() {
@@ -890,18 +893,37 @@ function startPenOverlay(container) {
 
 // ===== ANNOTATION SAVE/RESTORE =====
 function saveAnnotations(pageKey) {
-  const el = document.getElementById('scripture-text') || document.querySelector('.key-terms-list');
-  if (!el) return;
-  setUserData('annotation_html_' + pageKey, el.innerHTML);
+  // Save scripture text annotations
+  const scriptureEl = document.getElementById('scripture-text');
+  if (scriptureEl) setUserData('annotation_html_scripture_' + pageKey, scriptureEl.innerHTML);
+  // Save key terms annotations
+  const keyTermsEl = document.querySelector('.key-terms-list');
+  if (keyTermsEl) setUserData('annotation_html_keyterms_' + pageKey, keyTermsEl.innerHTML);
 }
 
 function restoreAnnotations(pageKey) {
-  const saved = getUserKey('annotation_html_' + pageKey);
-  if (!saved) return;
   setTimeout(() => {
-    const el = document.getElementById('scripture-text') || document.querySelector('.key-terms-list');
-    if (el) el.innerHTML = saved;
-  }, 100);
+    const scriptureEl = document.getElementById('scripture-text');
+    if (scriptureEl) {
+      const saved = getUserKey('annotation_html_scripture_' + pageKey);
+      if (saved) scriptureEl.innerHTML = saved;
+    }
+    const keyTermsEl = document.querySelector('.key-terms-list');
+    if (keyTermsEl) {
+      const saved = getUserKey('annotation_html_keyterms_' + pageKey);
+      if (saved) keyTermsEl.innerHTML = saved;
+    }
+  }, 150);
+}
+
+function autoSaveAnnotations() {
+  // Auto-save after every annotation action
+  const page = lessonPages[currentPageIndex];
+  if (!page) return;
+  const lesson = page.lesson;
+  if (!lesson) return;
+  const pageKey = page.type === 'scripture' ? 'scripture_' + lesson.id : 'keyterms_' + lesson.id;
+  saveAnnotations(pageKey);
 }
 
 document.addEventListener('mousedown', (e) => {
