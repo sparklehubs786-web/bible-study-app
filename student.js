@@ -4,31 +4,25 @@ let currentSubmitChapterId = null;
 
 window.addEventListener('DOMContentLoaded', () => {
   showLoading(true);
-  // Timeout safety — if Firebase takes too long, show error
-  const loadTimeout = setTimeout(()=>{
-    showLoading(false);
-    showError('Connection timed out. Please check your internet and <a href="auth.html">try signing in again</a>.');
-  }, 10000);
-
   auth.onAuthStateChanged(async user => {
-    clearTimeout(loadTimeout);
     if (!user) { window.location.href = 'auth.html'; return; }
+    if (!user.emailVerified) { showLoading(false); showVerifyPrompt(user); return; }
 
-    if (!user.emailVerified) {
-      showLoading(false);
-      showVerifyPrompt(user);
-      return;
+    // PRIMARY: Try localStorage first (instant, always works)
+    const saved = localStorage.getItem('dtwd_student');
+    if (saved) {
+      try {
+        currentStudent = JSON.parse(saved);
+        currentStudent.uid = user.uid; // Always keep uid fresh
+        showLoading(false);
+        showDashboard();
+      } catch(e) {}
     }
 
+    // SECONDARY: Try Firestore in background (update if available)
     try {
-      // Try Firestore first
       const doc = await db.collection('users').doc(user.uid).get();
-      if (!doc.exists) {
-        // Profile missing — create from auth data
-        const profile = {uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,role:'student',plan:'student',classCode:null,teacherName:null,createdAt:Date.now(),status:'active'};
-        try { await db.collection('users').doc(user.uid).set(profile); } catch(e2){}
-        currentStudent = profile;
-      } else {
+      if (doc.exists) {
         const data = doc.data();
         if (data.role === 'teacher') { window.location.href = 'dashboard.html'; return; }
         currentStudent = {
@@ -41,22 +35,31 @@ window.addEventListener('DOMContentLoaded', () => {
           purchasedAt:data.purchasedAt||Date.now(),
           classExpiresAt:data.classExpiresAt||null
         };
-      }
-    } catch(e) {
-      // Firestore blocked — fall back to localStorage
-      console.warn('Firestore error, using localStorage:', e.message);
-      const saved = localStorage.getItem('dtwd_student');
-      if (saved) {
-        currentStudent = JSON.parse(saved);
-        currentStudent.uid = user.uid;
-      } else {
+        localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+        // Refresh dashboard silently if already showing
+        if (document.getElementById('screen-dashboard').classList.contains('active')) {
+          updateWelcomeStats();
+          renderClassTab();
+        }
+      } else if (!saved) {
+        // No profile anywhere — create one
         currentStudent = {uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,classCode:null,teacherName:null,plan:'student',purchasedAt:Date.now()};
+        try { await db.collection('users').doc(user.uid).set({...currentStudent,role:'student',status:'active',createdAt:Date.now()}); } catch(e2){}
+        localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+        showLoading(false);
+        showDashboard();
+      }
+    } catch(fsErr) {
+      console.warn('Firestore unavailable:', fsErr.message);
+      // If we already showed dashboard from localStorage, just continue
+      if (!saved) {
+        // Nothing in localStorage either — create minimal session
+        currentStudent = {uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,classCode:null,teacherName:null,plan:'student',purchasedAt:Date.now()};
+        localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+        showLoading(false);
+        showDashboard();
       }
     }
-
-    localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-    showLoading(false);
-    showDashboard();
   });
 });
 
