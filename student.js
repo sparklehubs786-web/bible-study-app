@@ -4,19 +4,59 @@ let currentSubmitChapterId = null;
 
 window.addEventListener('DOMContentLoaded', () => {
   showLoading(true);
+  // Timeout safety — if Firebase takes too long, show error
+  const loadTimeout = setTimeout(()=>{
+    showLoading(false);
+    showError('Connection timed out. Please check your internet and <a href="auth.html">try signing in again</a>.');
+  }, 10000);
+
   auth.onAuthStateChanged(async user => {
+    clearTimeout(loadTimeout);
     if (!user) { window.location.href = 'auth.html'; return; }
-    if (!user.emailVerified) { showLoading(false); showVerifyPrompt(user); return; }
-    try {
-      const doc = await db.collection('users').doc(user.uid).get();
-      if (!doc.exists) { window.location.href = 'auth.html'; return; }
-      const data = doc.data();
-      if (data.role === 'teacher') { window.location.href = 'dashboard.html'; return; }
-      currentStudent = { uid:user.uid, name:data.name||user.displayName||user.email.split('@')[0], email:user.email, classCode:data.classCode||null, teacherName:data.teacherName||null, plan:'student', purchasedAt:data.purchasedAt||Date.now(), classExpiresAt:data.classExpiresAt||null };
-      localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+
+    if (!user.emailVerified) {
       showLoading(false);
-      showDashboard();
-    } catch(e) { showLoading(false); showError('Could not load your profile. Please refresh the page.'); }
+      showVerifyPrompt(user);
+      return;
+    }
+
+    try {
+      // Try Firestore first
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        // Profile missing — create from auth data
+        const profile = {uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,role:'student',plan:'student',classCode:null,teacherName:null,createdAt:Date.now(),status:'active'};
+        try { await db.collection('users').doc(user.uid).set(profile); } catch(e2){}
+        currentStudent = profile;
+      } else {
+        const data = doc.data();
+        if (data.role === 'teacher') { window.location.href = 'dashboard.html'; return; }
+        currentStudent = {
+          uid:user.uid,
+          name:data.name||user.displayName||user.email.split('@')[0],
+          email:user.email,
+          classCode:data.classCode||null,
+          teacherName:data.teacherName||null,
+          plan:'student',
+          purchasedAt:data.purchasedAt||Date.now(),
+          classExpiresAt:data.classExpiresAt||null
+        };
+      }
+    } catch(e) {
+      // Firestore blocked — fall back to localStorage
+      console.warn('Firestore error, using localStorage:', e.message);
+      const saved = localStorage.getItem('dtwd_student');
+      if (saved) {
+        currentStudent = JSON.parse(saved);
+        currentStudent.uid = user.uid;
+      } else {
+        currentStudent = {uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,classCode:null,teacherName:null,plan:'student',purchasedAt:Date.now()};
+      }
+    }
+
+    localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+    showLoading(false);
+    showDashboard();
   });
 });
 
@@ -147,7 +187,7 @@ async function renderFeedbackTab() {
   container.innerHTML='<div style="text-align:center;padding:20px;color:#9ca3af;font-size:.88rem;">Loading feedback...</div>';
   try {
     if(!currentStudent.uid)throw new Error('no uid');
-    const snap=await db.collection('feedback').where('studentUid','==',currentStudent.uid).orderBy('gradedAt','desc').get();
+    const snap=await db.collection('feedback').where('studentUid','==',currentStudent.uid).get();
     container.innerHTML='';
     if(snap.empty){container.innerHTML='<div class="feedback-empty"><div>📬</div>No feedback yet. Submit a chapter to your teacher to receive grades and comments.</div>';return;}
     snap.forEach(doc=>{
