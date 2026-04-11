@@ -5,542 +5,265 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Sign In — Destroying the Works of the Devil</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --purple: #7c3aed; --purple-dark: #5b21b6; --purple-light: #ede9fe;
-  --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
-  --white: #ffffff; --gray-50: #f9fafb; --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb; --gray-400: #9ca3af; --gray-600: #4b5563;
-  --gray-800: #1f2937; --black: #111827; --radius: 12px;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(160deg, #1e1b4b 0%, #3730a3 50%, #5b21b6 100%);
-  min-height: 100vh; display: flex; align-items: center;
-  justify-content: center; padding: 20px;
-}
-.auth-card {
-  background: var(--white); border-radius: 20px;
-  padding: 32px 28px; max-width: 420px; width: 100%;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
-}
-.auth-logo { text-align: center; font-size: 2.8rem; margin-bottom: 6px; }
-.auth-title { font-size: 1.4rem; font-weight: 900; color: var(--purple-dark); text-align: center; margin-bottom: 4px; }
-.auth-sub   { font-size: 0.84rem; color: var(--gray-600); text-align: center; margin-bottom: 22px; }
-
-/* Mode tabs */
-.mode-tabs { display: flex; background: var(--gray-100); border-radius: 10px; padding: 4px; margin-bottom: 20px; gap: 4px; }
-.mode-tab  {
-  flex: 1; padding: 9px; border: none; border-radius: 8px;
-  font-size: 0.88rem; font-weight: 700; cursor: pointer;
-  background: transparent; color: var(--gray-600); transition: all 0.2s;
-}
-.mode-tab.active { background: var(--white); color: var(--purple-dark); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-/* Role selector */
-.role-label { font-size: 0.8rem; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; display: block; }
-.role-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-.role-opt {
-  border: 2px solid var(--gray-200); border-radius: var(--radius);
-  padding: 14px 10px; text-align: center; cursor: pointer;
-  transition: all 0.2s; background: var(--white);
-}
-.role-opt:hover { border-color: var(--purple); background: var(--purple-light); }
-.role-opt.selected { border-color: var(--purple); background: var(--purple-light); }
-.role-opt.selected.teacher-opt { border-color: var(--green); background: var(--green-light); }
-.role-icon  { font-size: 1.8rem; margin-bottom: 5px; }
-.role-name  { font-size: 0.85rem; font-weight: 800; color: var(--black); }
-.role-desc  { font-size: 0.7rem; color: var(--gray-600); margin-top: 2px; }
-
-/* Form fields */
-.field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-.auth-input {
-  width: 100%; padding: 11px 14px; border: 2px solid var(--gray-200);
-  border-radius: 10px; font-size: 0.92rem; outline: none;
-  font-family: inherit; transition: border-color 0.2s; background: var(--gray-50);
-}
-.auth-input:focus { border-color: var(--purple); background: var(--white); }
-.auth-input.error { border-color: #ef4444; }
-
-/* Plan selector for teachers */
-.plan-select {
-  width: 100%; padding: 11px 14px; border: 2px solid var(--gray-200);
-  border-radius: 10px; font-size: 0.88rem; outline: none;
-  font-family: inherit; background: var(--gray-50); cursor: pointer;
-}
-.plan-select:focus { border-color: var(--green); }
-
-/* Buttons */
-.btn-auth {
-  width: 100%; padding: 13px; border: none; border-radius: 12px;
-  font-size: 1rem; font-weight: 800; cursor: pointer;
-  transition: all 0.2s; margin-bottom: 12px; letter-spacing: 0.3px;
-}
-.btn-student { background: var(--purple); color: var(--white); }
-.btn-student:hover { background: var(--purple-dark); }
-.btn-teacher { background: var(--green); color: var(--white); }
-.btn-teacher:hover { background: var(--green-dark); }
-.btn-google {
-  width: 100%; padding: 11px; border: 2px solid var(--gray-200);
-  border-radius: 12px; background: var(--white); font-size: 0.9rem;
-  font-weight: 700; cursor: pointer; transition: all 0.2s;
-  color: var(--gray-800); display: flex; align-items: center;
-  justify-content: center; gap: 10px; margin-bottom: 10px;
-}
-.btn-google:hover { background: var(--gray-50); }
-
-/* Divider */
-.auth-divider { text-align: center; font-size: 0.78rem; color: var(--gray-400); margin: 10px 0; }
-
-/* Error / success messages */
-.auth-error {
-  background: #fee2e2; color: #991b1b; border-radius: 8px;
-  padding: 10px 14px; font-size: 0.84rem; font-weight: 600;
-  margin-bottom: 12px; display: none;
-}
-.auth-success {
-  background: var(--green-light); color: var(--green-dark); border-radius: 8px;
-  padding: 10px 14px; font-size: 0.84rem; font-weight: 600;
-  margin-bottom: 12px; display: none;
-}
-
-/* Footer */
-.auth-footer { text-align: center; font-size: 0.78rem; color: var(--gray-600); margin-top: 16px; }
-.auth-footer a { color: var(--purple); font-weight: 700; text-decoration: none; }
-
-/* Loading */
-.btn-loading { opacity: 0.7; cursor: not-allowed; }
-
-/* Teacher plan info */
-.plan-info {
-  background: var(--green-light); border-radius: 8px;
-  padding: 8px 12px; font-size: 0.78rem; color: var(--green-dark);
-  font-weight: 600; margin-top: -6px; margin-bottom: 10px;
-  display: none;
-}
-
-/* Password strength */
-.pwd-strength { font-size: 0.72rem; margin-top: -6px; margin-bottom: 2px; font-weight: 700; }
-.pwd-weak   { color: #ef4444; }
-.pwd-medium { color: #d97706; }
-.pwd-strong { color: var(--green-dark); }
-
-@media (max-width: 380px) {
-  .auth-card { padding: 24px 18px; }
-  .role-options { grid-template-columns: 1fr 1fr; gap: 8px; }
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#7c3aed;--pd:#5b21b6;--pl:#ede9fe;--g:#16a34a;--gd:#15803d;--gl:#dcfce7;--w:#fff;--g1:#f3f4f6;--g2:#e5e7eb;--g4:#9ca3af;--g6:#4b5563;--g8:#1f2937}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(160deg,#1e1b4b,#3730a3,#5b21b6);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--w);border-radius:20px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.logo{text-align:center;font-size:2.8rem;margin-bottom:6px}
+h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bottom:4px}
+.sub{font-size:.84rem;color:var(--g6);text-align:center;margin-bottom:20px}
+.tabs{display:flex;background:var(--g1);border-radius:10px;padding:4px;margin-bottom:18px;gap:4px}
+.tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--g6);transition:all .2s}
+.tab.on{background:var(--w);color:var(--pd);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.msg{border-radius:8px;padding:10px 14px;font-size:.84rem;font-weight:600;margin-bottom:12px;display:none;line-height:1.5}
+.err{background:#fee2e2;color:#991b1b}.ok{background:var(--gl);color:var(--gd)}.info{background:#dbeafe;color:#1e40af}
+.rl{font-size:.8rem;font-weight:700;color:var(--g8);margin-bottom:8px;display:block}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.role{border:2px solid var(--g2);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s}
+.role:hover{border-color:var(--p);background:var(--pl)}
+.role.on{border-color:var(--p);background:var(--pl)}
+.role.ont{border-color:var(--g)!important;background:var(--gl)!important}
+.ri{font-size:1.8rem;margin-bottom:5px}.rn{font-size:.85rem;font-weight:800;color:var(--g8)}.rp{font-size:.7rem;color:var(--g6);margin-top:2px}
+.psel{width:100%;padding:11px 14px;border:2px solid var(--g2);border-radius:10px;font-size:.88rem;outline:none;font-family:inherit;background:#f9fafb;cursor:pointer;margin-bottom:8px}
+.psel:focus{border-color:var(--g)}
+.pinfo{background:var(--gl);border-radius:8px;padding:8px 12px;font-size:.78rem;color:var(--gd);font-weight:600;margin-bottom:10px;display:none}
+.fields{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.inp{width:100%;padding:11px 14px;border:2px solid var(--g2);border-radius:10px;font-size:.92rem;outline:none;font-family:inherit;transition:border-color .2s;background:#f9fafb}
+.inp:focus{border-color:var(--p);background:var(--w)}
+.ps{font-size:.72rem;font-weight:700;margin-top:-6px}
+.pw{color:#ef4444}.pm{color:#d97706}.pg{color:var(--gd)}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.bp{background:var(--p);color:var(--w)}.bp:hover:not(:disabled){background:var(--pd)}
+.bg{background:var(--g);color:var(--w)}.bg:hover:not(:disabled){background:var(--gd)}
+.bgo{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--w);border:2px solid var(--g2);color:var(--g8);font-size:.92rem;font-weight:700}
+.bgo:hover{background:#f9fafb}
+.div{text-align:center;font-size:.78rem;color:var(--g4);margin:6px 0}
+.vb{background:#dbeafe;border-radius:8px;padding:10px 12px;font-size:.8rem;color:#1e40af;font-weight:600;margin-bottom:10px;display:none}
+.foot{text-align:center;font-size:.78rem;color:var(--g6);margin-top:12px}
+.foot a{color:var(--p);font-weight:700;text-decoration:none;cursor:pointer}
+.fgt{text-align:center;margin-bottom:8px}
+.fgt a{font-size:.78rem;color:var(--p);font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-<div class="auth-card">
-  <div class="auth-logo">🙏</div>
-  <h1 class="auth-title">Destroying the Works<br>of the Devil</h1>
-  <p class="auth-sub">Interactive Bible Study — Book of Luke</p>
+<div class="card">
+  <div class="logo">🙏</div>
+  <h1>Destroying the Works<br>of the Devil</h1>
+  <p class="sub">Interactive Bible Study — Book of Luke</p>
 
-  <!-- LOGIN / SIGNUP TABS -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" id="tab-login" onclick="switchMode('login')">Sign In</button>
-    <button class="mode-tab" id="tab-signup" onclick="switchMode('signup')">Create Account</button>
+  <div class="tabs">
+    <button class="tab on" id="ti" onclick="setMode('login')">Sign In</button>
+    <button class="tab"    id="tu" onclick="setMode('signup')">Create Account</button>
   </div>
 
-  <!-- ERROR / SUCCESS -->
-  <div class="auth-error" id="auth-error"></div>
-  <div class="auth-success" id="auth-success"></div>
+  <div class="msg" id="msg"></div>
 
-  <!-- ROLE SELECTOR (shown on signup) -->
-  <div id="role-section" style="display:none;">
-    <span class="role-label">I am a:</span>
-    <div class="role-options">
-      <div class="role-opt student-opt" id="role-student" onclick="selectRole('student')">
-        <div class="role-icon">👤</div>
-        <div class="role-name">Student</div>
-        <div class="role-desc">$7 one time</div>
-      </div>
-      <div class="role-opt teacher-opt" id="role-teacher" onclick="selectRole('teacher')">
-        <div class="role-icon">👨‍🏫</div>
-        <div class="role-name">Teacher</div>
-        <div class="role-desc">From $30 / 3 months</div>
-      </div>
+  <div id="sec-role" style="display:none">
+    <span class="rl">I am a:</span>
+    <div class="roles">
+      <div class="role on" id="rs" onclick="setRole('student')"><div class="ri">👤</div><div class="rn">Student</div><div class="rp">$7 one time</div></div>
+      <div class="role"    id="rt" onclick="setRole('teacher')"><div class="ri">👨‍🏫</div><div class="rn">Teacher</div><div class="rp">From $30/3 months</div></div>
     </div>
   </div>
 
-  <!-- TEACHER PLAN (shown when teacher selected on signup) -->
-  <div id="teacher-plan-section" style="display:none;">
-    <span class="role-label">Select your class plan:</span>
-    <select class="plan-select" id="teacher-plan" onchange="updatePlanInfo()">
+  <div id="sec-plan" style="display:none">
+    <span class="rl">Select your class plan:</span>
+    <select class="psel" id="plan" onchange="onPlan()">
       <option value="">— Choose your plan —</option>
-      <option value="small">Small Group — Up to 15 students — $30</option>
-      <option value="medium">Medium Group — Up to 30 students — $60</option>
-      <option value="large">Large Group — Up to 60 students — $120</option>
-      <option value="xl">Extra Large — Up to 100 students — $300</option>
+      <option value="small">Small Group — up to 15 students — $30</option>
+      <option value="medium">Medium Group — up to 30 students — $60</option>
+      <option value="large">Large Group — up to 60 students — $120</option>
+      <option value="xl">Extra Large — up to 100 students — $300</option>
     </select>
-    <div class="plan-info" id="plan-info"></div>
+    <div class="pinfo" id="pinfo"></div>
   </div>
 
-  <!-- GOOGLE SIGN IN -->
-  <button class="btn-google" onclick="signInGoogle()">
+  <button class="btn bgo" onclick="googleAuth()">
     <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G"/>
-    <span id="google-btn-text">Continue with Google</span>
+    <span id="glbl">Continue with Google</span>
   </button>
-  <div class="auth-divider">— or use email —</div>
+  <div class="div">— or use email —</div>
 
-  <!-- EMAIL FORM -->
-  <div class="field-group">
-    <div id="name-field" style="display:none;">
-      <input type="text" class="auth-input" id="auth-name" placeholder="Full name" autocomplete="name"/>
-    </div>
-    <input type="email" class="auth-input" id="auth-email" placeholder="Email address" autocomplete="email"/>
-    <div>
-      <input type="password" class="auth-input" id="auth-pass" placeholder="Password"
-        autocomplete="current-password" oninput="checkPasswordStrength(this.value)"/>
-      <div class="pwd-strength" id="pwd-strength"></div>
-    </div>
-    <div id="confirm-field" style="display:none;">
-      <input type="password" class="auth-input" id="auth-confirm" placeholder="Confirm password" autocomplete="new-password"/>
-    </div>
+  <div class="vb" id="vbanner">📧 After signing up you will receive a verification email. Click the link to activate your account before signing in.</div>
+
+  <div class="fields">
+    <input class="inp" type="text"     id="fn"  placeholder="Full name"         style="display:none" autocomplete="name"/>
+    <input class="inp" type="email"    id="fe"  placeholder="Email address"      autocomplete="email"/>
+    <input class="inp" type="password" id="fp"  placeholder="Password"           autocomplete="current-password" oninput="pwStr(this.value)"/>
+    <div class="ps" id="pws"></div>
+    <input class="inp" type="password" id="fc"  placeholder="Confirm password"   style="display:none" autocomplete="new-password"/>
   </div>
 
-  <!-- SUBMIT BUTTON -->
-  <button class="btn-auth btn-student" id="btn-submit" onclick="handleSubmit()">
-    Sign In
-  </button>
+  <div class="fgt" id="fgt-row"><a onclick="forgotPwd()">Forgot your password?</a></div>
+  <button class="btn bp" id="bsub" onclick="go()">Sign In</button>
 
-  <!-- FOOTER -->
-  <div class="auth-footer" id="auth-footer-text">
-    Don't have an account? <a href="#" onclick="switchMode('signup'); return false;">Create one free →</a>
-  </div>
-  <div class="auth-footer" style="margin-top:8px;">
-    <a href="index.html">← Back to App</a> &nbsp;|&nbsp;
-    <a href="pricing.html">View Pricing</a>
-  </div>
+  <div class="foot" id="ftext">Don't have an account? <a onclick="setMode('signup')">Create one free →</a></div>
+  <div class="foot" style="margin-top:8px;"><a href="index.html">← Back to App</a> &nbsp;|&nbsp; <a href="pricing.html">View Pricing</a></div>
 </div>
 
 <script>
-// ===== STATE =====
-let currentMode = 'login';   // 'login' | 'signup'
-let currentRole = 'student'; // 'student' | 'teacher'
+let mode='login', role='student';
+const PL={small:{l:'✅ Up to 15 students | 3-month class',p:30},medium:{l:'✅ Up to 30 students | 3-month class',p:60},large:{l:'✅ Up to 60 students | 3-month class',p:120},xl:{l:'✅ Up to 100 students | 3-month class',p:300}};
 
-// ===== TEST STRIPE KEYS (visible to client for testing) =====
-// These are PUBLIC test keys — safe to include in frontend code
-// Use these to test payments without real money
-const STRIPE_TEST_KEY = 'pk_test_51OexampleTestKeyReplaceWithYours';
-
-// ===== PLAN INFO =====
-const PLAN_DETAILS = {
-  small:  { label: '✅ Up to 15 students | 3-month class | Full teacher dashboard', price: 30 },
-  medium: { label: '✅ Up to 30 students | 3-month class | Full teacher dashboard', price: 60 },
-  large:  { label: '✅ Up to 60 students | 3-month class | Full teacher dashboard', price: 120 },
-  xl:     { label: '✅ Up to 100 students | 3-month class | Full teacher dashboard', price: 300 }
-};
-
-// ===== SWITCH MODE =====
-function switchMode(mode) {
-  currentMode = mode;
-  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
-  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
-
-  // Show/hide fields
-  document.getElementById('role-section').style.display      = mode === 'signup' ? 'block' : 'none';
-  document.getElementById('name-field').style.display        = mode === 'signup' ? 'block' : 'none';
-  document.getElementById('confirm-field').style.display     = mode === 'signup' ? 'block' : 'none';
-
-  // Reset teacher plan on mode switch
-  if (mode === 'login') {
-    document.getElementById('teacher-plan-section').style.display = 'none';
-    document.getElementById('auth-pass').setAttribute('autocomplete', 'current-password');
-  } else {
-    document.getElementById('auth-pass').setAttribute('autocomplete', 'new-password');
-    selectRole('student'); // default role
-  }
-
-  // Update button and footer
-  const btn = document.getElementById('btn-submit');
-  if (mode === 'login') {
-    btn.textContent = 'Sign In';
-    btn.className = 'btn-auth btn-student';
-    document.getElementById('auth-footer-text').innerHTML =
-      'Don\'t have an account? <a href="#" onclick="switchMode(\'signup\'); return false;">Create one free →</a>';
-    document.getElementById('google-btn-text').textContent = 'Continue with Google';
-  } else {
-    updateButtonForRole();
-    document.getElementById('auth-footer-text').innerHTML =
-      'Already have an account? <a href="#" onclick="switchMode(\'login\'); return false;">Sign in →</a>';
-    document.getElementById('google-btn-text').textContent = 'Sign up with Google';
-  }
-
-  clearMessages();
+function setMode(m){
+  mode=m;
+  document.getElementById('ti').classList.toggle('on',m==='login');
+  document.getElementById('tu').classList.toggle('on',m==='signup');
+  document.getElementById('sec-role').style.display=m==='signup'?'block':'none';
+  document.getElementById('fn').style.display=m==='signup'?'block':'none';
+  document.getElementById('fc').style.display=m==='signup'?'block':'none';
+  document.getElementById('fgt-row').style.display=m==='login'?'block':'none';
+  document.getElementById('vbanner').style.display=m==='signup'?'block':'none';
+  document.getElementById('fp').autocomplete=m==='login'?'current-password':'new-password';
+  const b=document.getElementById('bsub');
+  if(m==='login'){b.textContent='Sign In';b.className='btn bp';document.getElementById('ftext').innerHTML='Don\'t have an account? <a onclick="setMode(\'signup\')">Create one free →</a>';document.getElementById('glbl').textContent='Continue with Google';document.getElementById('sec-plan').style.display='none';}
+  else{setRole('student');document.getElementById('ftext').innerHTML='Already have an account? <a onclick="setMode(\'login\')">Sign in →</a>';document.getElementById('glbl').textContent='Sign up with Google';}
+  clrMsg();
 }
 
-// ===== SELECT ROLE =====
-function selectRole(role) {
-  currentRole = role;
-  document.getElementById('role-student').classList.toggle('selected', role === 'student');
-  document.getElementById('role-teacher').classList.toggle('selected', role === 'teacher');
-  document.getElementById('teacher-plan-section').style.display = role === 'teacher' ? 'block' : 'none';
-  updateButtonForRole();
+function setRole(r){
+  role=r;
+  document.getElementById('rs').classList.toggle('on',r==='student');
+  document.getElementById('rt').classList.toggle('on',r==='teacher');
+  document.getElementById('rt').classList.toggle('ont',r==='teacher');
+  document.getElementById('sec-plan').style.display=r==='teacher'?'block':'none';
+  updBtn();
 }
 
-function updateButtonForRole() {
-  const btn = document.getElementById('btn-submit');
-  if (currentMode === 'signup') {
-    if (currentRole === 'student') {
-      btn.textContent = 'Create Student Account — $7';
-      btn.className = 'btn-auth btn-student';
-    } else {
-      const plan = document.getElementById('teacher-plan').value;
-      const price = plan && PLAN_DETAILS[plan] ? '$' + PLAN_DETAILS[plan].price : '';
-      btn.textContent = 'Create Teacher Account' + (price ? ' — ' + price : '');
-      btn.className = 'btn-auth btn-teacher';
-    }
-  }
+function onPlan(){
+  const v=document.getElementById('plan').value,pi=document.getElementById('pinfo');
+  if(v&&PL[v]){pi.textContent=PL[v].l;pi.style.display='block';}else pi.style.display='none';
+  updBtn();
 }
 
-function updatePlanInfo() {
-  const plan = document.getElementById('teacher-plan').value;
-  const infoEl = document.getElementById('plan-info');
-  if (plan && PLAN_DETAILS[plan]) {
-    infoEl.textContent = PLAN_DETAILS[plan].label;
-    infoEl.style.display = 'block';
-  } else {
-    infoEl.style.display = 'none';
-  }
-  updateButtonForRole();
+function updBtn(){
+  if(mode!=='signup')return;
+  const b=document.getElementById('bsub');
+  if(role==='student'){b.textContent='Create Student Account — $7';b.className='btn bp';}
+  else{const v=document.getElementById('plan').value;b.textContent='Create Teacher Account'+(v&&PL[v]?' — $'+PL[v].p:'');b.className='btn bg';}
 }
 
-// ===== PASSWORD STRENGTH =====
-function checkPasswordStrength(pwd) {
-  const el = document.getElementById('pwd-strength');
-  if (!pwd || currentMode === 'login') { el.textContent = ''; return; }
-  if (pwd.length < 6) {
-    el.textContent = '⚠️ Too short (min 6 characters)';
-    el.className = 'pwd-strength pwd-weak';
-  } else if (pwd.length < 8 || !/[0-9]/.test(pwd)) {
-    el.textContent = '⚡ Fair — add numbers or symbols';
-    el.className = 'pwd-strength pwd-medium';
-  } else {
-    el.textContent = '✅ Strong password';
-    el.className = 'pwd-strength pwd-strong';
-  }
+function pwStr(v){
+  const el=document.getElementById('pws');
+  if(!v||mode==='login'){el.textContent='';return;}
+  if(v.length<6){el.className='ps pw';el.textContent='⚠️ Too short (min 6 chars)';}
+  else if(v.length<8||!/[0-9]/.test(v)){el.className='ps pm';el.textContent='⚡ Fair — add numbers';}
+  else{el.className='ps pg';el.textContent='✅ Strong password';}
 }
 
-// ===== VALIDATION =====
-function validate() {
-  const email   = document.getElementById('auth-email').value.trim();
-  const pass    = document.getElementById('auth-pass').value;
-  const name    = document.getElementById('auth-name').value.trim();
-  const confirm = document.getElementById('auth-confirm').value;
-
-  if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return false; }
-  if (!pass || pass.length < 6)       { showError('Password must be at least 6 characters.'); return false; }
-
-  if (currentMode === 'signup') {
-    if (!name)                        { showError('Please enter your full name.'); return false; }
-    if (pass !== confirm)             { showError('Passwords do not match.'); return false; }
-    if (currentRole === 'teacher') {
-      const plan = document.getElementById('teacher-plan').value;
-      if (!plan)                      { showError('Please select a teacher plan.'); return false; }
-    }
+function val(){
+  const e=document.getElementById('fe').value.trim(),p=document.getElementById('fp').value;
+  if(!e||!e.includes('@')){showMsg('Please enter a valid email address.','err');return false;}
+  if(!p||p.length<6){showMsg('Password must be at least 6 characters.','err');return false;}
+  if(mode==='signup'){
+    const n=document.getElementById('fn').value.trim(),c=document.getElementById('fc').value;
+    if(!n){showMsg('Please enter your full name.','err');return false;}
+    if(p!==c){showMsg('Passwords do not match. Please re-enter.','err');return false;}
+    if(role==='teacher'&&!document.getElementById('plan').value){showMsg('Please select a teacher plan.','err');return false;}
   }
   return true;
 }
 
-// ===== HANDLE SUBMIT =====
-async function handleSubmit() {
-  if (!validate()) return;
-
-  const btn = document.getElementById('btn-submit');
-  btn.classList.add('btn-loading');
-  btn.textContent = '⏳ Please wait...';
-  clearMessages();
-
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  const name  = document.getElementById('auth-name').value.trim();
-  const role  = currentRole;
-  const plan  = currentRole === 'teacher' ? document.getElementById('teacher-plan').value : 'student';
-
-  try {
-    if (currentMode === 'login') {
-      await doLogin(email, pass);
-    } else {
-      await doSignup(email, pass, name, role, plan);
-    }
-  } catch(e) {
-    showError(e.message || 'Something went wrong. Please try again.');
-    btn.classList.remove('btn-loading');
-    updateButtonForRole();
-    if (currentMode === 'login') btn.textContent = 'Sign In';
-  }
+async function go(){
+  if(!val())return;
+  const b=document.getElementById('bsub');b.disabled=true;b.textContent='⏳ Please wait...';clrMsg();
+  const e=document.getElementById('fe').value.trim(),p=document.getElementById('fp').value,n=document.getElementById('fn').value.trim();
+  try{mode==='login'?await doLogin(e,p):await doSignup(e,p,n);}
+  catch(err){showMsg(nice(err.code||err.message),'err');b.disabled=false;mode==='login'?b.textContent='Sign In':updBtn();}
 }
 
-// ===== LOGIN =====
-async function doLogin(email, pass) {
-  // Simulate API call — replace with Firebase Auth in production
-  await wait(1200);
-
-  // Check localStorage for demo accounts
-  const accounts = getAccounts();
-  const user = accounts.find(a => a.email === email && a.pass === pass);
-
-  if (!user) {
-    // Demo fallback
-    if (email.includes('@') && pass.length >= 6) {
-      // For testing: accept any valid looking credentials
-      const demoRole = email.includes('teacher') ? 'teacher' : 'student';
-      redirectUser({ email, name: email.split('@')[0], role: demoRole, plan: demoRole === 'teacher' ? 'medium' : 'student' });
-      return;
-    }
-    throw new Error('Email or password is incorrect. Please try again.');
-  }
-
-  redirectUser(user);
-}
-
-// ===== SIGNUP =====
-async function doSignup(email, pass, name, role, plan) {
-  await wait(1500);
-
-  // Check if already exists
-  const accounts = getAccounts();
-  if (accounts.find(a => a.email === email)) {
-    throw new Error('An account with this email already exists. Please sign in instead.');
-  }
-
-  // For teacher: initiate payment first
-  if (role === 'teacher') {
-    const price = PLAN_DETAILS[plan].price;
-    // Save pending account
-    const pending = { email, pass, name, role, plan, status: 'pending_payment', createdAt: Date.now() };
-    localStorage.setItem('dtwd_pending_signup', JSON.stringify(pending));
-    // Redirect to pricing with pre-selected plan
-    showSuccess('Account ready! Redirecting to payment...');
-    await wait(1500);
-    window.location.href = 'pricing.html?plan=' + plan + '&email=' + encodeURIComponent(email) + '&name=' + encodeURIComponent(name);
+async function doLogin(email,pass){
+  const cr=await auth.signInWithEmailAndPassword(email,pass);
+  const u=cr.user;
+  if(!u.emailVerified){
+    await auth.signOut();
+    showMsg('Please verify your email first. Check your inbox for the verification link.','info');
+    document.getElementById('bsub').disabled=false;document.getElementById('bsub').textContent='Sign In';
+    if(confirm('Resend verification email?')){await u.sendEmailVerification();showMsg('Verification email sent!','ok');}
     return;
   }
-
-  // Student: redirect to payment then activate
-  const pending = { email, pass, name, role, plan: 'student', status: 'pending_payment', createdAt: Date.now() };
-  localStorage.setItem('dtwd_pending_signup', JSON.stringify(pending));
-  showSuccess('Account ready! Redirecting to payment ($7)...');
-  await wait(1500);
-  window.location.href = 'pricing.html?plan=student&email=' + encodeURIComponent(email) + '&name=' + encodeURIComponent(name);
+  const d=await db.collection('users').doc(u.uid).get();
+  if(d.exists){const data=d.data();save(data);go2(data.role);}
+  else{const pr={uid:u.uid,name:u.displayName||email.split('@')[0],email,role:'student',plan:'student',status:'active',createdAt:Date.now()};await db.collection('users').doc(u.uid).set(pr);save(pr);go2('student');}
 }
 
-// ===== GOOGLE SIGN IN =====
-async function signInGoogle() {
-  clearMessages();
-  // Simulate Google OAuth — replace with Firebase Google Auth in production
-  await wait(800);
-  const role = currentMode === 'signup' ? currentRole : 'student';
-  const demoUser = {
-    email: 'demo@gmail.com',
-    name: 'Demo User',
-    role,
-    plan: role === 'teacher' ? 'medium' : 'student',
-    googleAuth: true
-  };
-
-  if (currentMode === 'signup' && role === 'teacher') {
-    const plan = document.getElementById('teacher-plan').value;
-    if (!plan) { showError('Please select a teacher plan before continuing.'); return; }
-    demoUser.plan = plan;
-    localStorage.setItem('dtwd_pending_signup', JSON.stringify({ ...demoUser, status: 'pending_payment' }));
-    window.location.href = 'pricing.html?plan=' + plan + '&email=' + encodeURIComponent(demoUser.email);
+async function doSignup(email,pass,name){
+  const pv=document.getElementById('plan').value;
+  if(role==='teacher'){
+    localStorage.setItem('dtwd_pending_signup',JSON.stringify({email,pass,name,role,plan:pv}));
+    showMsg('Redirecting to payment...','ok');
+    setTimeout(()=>window.location.href='pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name),1500);
     return;
   }
-
-  redirectUser(demoUser);
+  const cr=await auth.createUserWithEmailAndPassword(email,pass);
+  const u=cr.user;
+  await u.updateProfile({displayName:name});
+  await u.sendEmailVerification();
+  const pr={uid:u.uid,name,email,role:'student',plan:'student',classCode:null,teacherName:null,createdAt:Date.now(),status:'pending_payment'};
+  await db.collection('users').doc(u.uid).set(pr);
+  await auth.signOut();
+  showMsg('✅ Account created! Check '+email+' for your verification email. After verifying, complete your $7 payment.','ok');
+  localStorage.setItem('dtwd_pending_signup',JSON.stringify({email,pass,name,role:'student',plan:'student',uid:u.uid}));
+  setTimeout(()=>window.location.href='pricing.html?plan=student&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name),3000);
 }
 
-// ===== REDIRECT BASED ON ROLE =====
-function redirectUser(user) {
-  // Save current user session
-  localStorage.setItem('dtwd_current_user', JSON.stringify(user));
-
-  // KEY: redirect ONLY to the correct dashboard based on role
-  if (user.role === 'teacher') {
-    localStorage.setItem('dtwd_teacher', JSON.stringify({
-      name: user.name,
-      email: user.email,
-      classCode: 'DTWD-' + Math.random().toString(36).substring(2,8).toUpperCase(),
-      plan: user.plan,
-      maxStudents: { small:15, medium:30, large:60, xl:100 }[user.plan] || 30,
-      expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
-    }));
-    showSuccess('Welcome back! Redirecting to Teacher Dashboard...');
-    setTimeout(() => window.location.href = 'dashboard.html', 1200);
-  } else {
-    localStorage.setItem('dtwd_student', JSON.stringify({
-      name: user.name,
-      email: user.email,
-      classCode: null,
-      teacherName: null,
-      plan: 'student',
-      purchasedAt: Date.now()
-    }));
-    showSuccess('Welcome! Redirecting to your Student Dashboard...');
-    setTimeout(() => window.location.href = 'student.html', 1200);
-  }
-}
-
-// ===== ACCOUNT STORAGE =====
-function getAccounts() {
-  try { return JSON.parse(localStorage.getItem('dtwd_accounts') || '[]'); } catch(e) { return []; }
-}
-function saveAccount(user) {
-  const accounts = getAccounts();
-  accounts.push(user);
-  localStorage.setItem('dtwd_accounts', JSON.stringify(accounts));
-}
-
-// ===== MESSAGES =====
-function showError(msg) {
-  const el = document.getElementById('auth-error');
-  el.textContent = '⚠️ ' + msg;
-  el.style.display = 'block';
-  document.getElementById('auth-success').style.display = 'none';
-  // Reset button
-  const btn = document.getElementById('btn-submit');
-  btn.classList.remove('btn-loading');
-  if (currentMode === 'login') btn.textContent = 'Sign In';
-  else updateButtonForRole();
-}
-
-function showSuccess(msg) {
-  const el = document.getElementById('auth-success');
-  el.textContent = '✅ ' + msg;
-  el.style.display = 'block';
-  document.getElementById('auth-error').style.display = 'none';
-}
-
-function clearMessages() {
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('auth-success').style.display = 'none';
-}
-
-function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ===== CHECK URL PARAMS =====
-// If coming back from payment, auto-activate account
-window.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('payment') === 'success') {
-    const pending = localStorage.getItem('dtwd_pending_signup');
-    if (pending) {
-      const user = JSON.parse(pending);
-      user.status = 'active';
-      saveAccount(user);
-      localStorage.removeItem('dtwd_pending_signup');
-      redirectUser(user);
+async function googleAuth(){
+  clrMsg();
+  try{
+    const pr=new firebase.auth.GoogleAuthProvider();
+    const cr=await auth.signInWithPopup(pr);
+    const u=cr.user;
+    const d=await db.collection('users').doc(u.uid).get();
+    if(d.exists){const data=d.data();save(data);go2(data.role);}
+    else{
+      const nr=mode==='signup'?role:'student';
+      const pv=nr==='teacher'?document.getElementById('plan').value:'student';
+      if(nr==='teacher'&&!pv){showMsg('Please select a teacher plan.','err');await auth.signOut();return;}
+      const profile={uid:u.uid,name:u.displayName||'',email:u.email,role:nr,plan:pv,classCode:nr==='teacher'?genCode():null,teacherName:null,createdAt:Date.now(),status:nr==='student'?'pending_payment':'pending_payment'};
+      await db.collection('users').doc(u.uid).set(profile);
+      localStorage.setItem('dtwd_pending_signup',JSON.stringify(profile));
+      window.location.href='pricing.html?plan='+(pv||'student')+'&email='+encodeURIComponent(u.email)+'&name='+encodeURIComponent(u.displayName||'');
     }
-  }
+  }catch(e){showMsg(nice(e.code||e.message),'err');}
+}
 
-  // Pre-select role from URL
-  const roleParam = params.get('role');
-  if (roleParam === 'teacher') { switchMode('signup'); selectRole('teacher'); }
-  else if (roleParam === 'student') { switchMode('signup'); }
+async function forgotPwd(){
+  let e=document.getElementById('fe').value.trim();
+  if(!e||!e.includes('@')){e=prompt('Enter your email address:');if(!e)return;}
+  try{await auth.sendPasswordResetEmail(e);showMsg('✅ Password reset email sent to '+e+'. Check your inbox.','ok');}
+  catch(e2){showMsg(nice(e2.code),'err');}
+}
+
+function save(d){
+  if(d.role==='teacher'){localStorage.setItem('dtwd_teacher',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||genCode(),plan:d.plan,maxStudents:{small:15,medium:30,large:60,xl:100}[d.plan]||30,expiresAt:d.expiresAt||(Date.now()+90*24*60*60*1000)}));}
+  else{localStorage.setItem('dtwd_student',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||null,teacherName:d.teacherName||null,plan:'student',purchasedAt:d.purchasedAt||Date.now()}));}
+}
+
+function go2(r){r==='teacher'?window.location.href='dashboard.html':window.location.href='student.html';}
+function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='DTWD-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function showMsg(t,c){const el=document.getElementById('msg');el.textContent=t;el.className='msg '+c;el.style.display='block';}
+function clrMsg(){document.getElementById('msg').style.display='none';}
+function nice(c){const m={'auth/user-not-found':'No account found. Please check your email or create an account.','auth/wrong-password':'Incorrect password. Please try again.','auth/email-already-in-use':'An account with this email already exists. Please sign in.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password must be at least 6 characters.','auth/too-many-requests':'Too many attempts. Please wait a few minutes.','auth/popup-closed-by-user':'Sign-in was cancelled. Please try again.','auth/invalid-credential':'Email or password is incorrect. Please try again.'};return m[c]||'Something went wrong. Please try again.';}
+
+// Auto-redirect if already logged in
+auth.onAuthStateChanged(u=>{
+  if(u&&u.emailVerified){
+    db.collection('users').doc(u.uid).get().then(d=>{
+      if(d.exists&&d.data().status==='active'){save(d.data());go2(d.data().role);}
+    });
+  }
+});
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const p=new URLSearchParams(window.location.search);
+  if(p.get('role')==='teacher'){setMode('signup');setRole('teacher');}
+  else if(p.get('signup')==='1')setMode('signup');
 });
 </script>
 </body>
