@@ -104,6 +104,8 @@ function toggleComplete(pageKey) {
   const current = getUserKey(pageKey) === 'true';
   const newVal = !current;
   setUserData(pageKey, newVal.toString());
+  // Save annotations when marking complete
+  saveAnnotations(pageKey);
   const btn = document.getElementById('btn-complete-' + pageKey);
   if (btn) {
     btn.classList.toggle('done', newVal);
@@ -246,6 +248,9 @@ function renderPage() {
   content.innerHTML = '';
   stopAudio();
   closeAnnotationToolbar();
+  // CLEAR audio text so wrong page audio never plays
+  const audioBtn = document.getElementById('nav-audio-btn');
+  if (audioBtn) audioBtn.setAttribute('data-text', '');
 
   switch(page.type) {
     case 'prayer_before':        renderPrayerPage(content, page.lesson, 'before'); break;
@@ -307,6 +312,8 @@ function renderScripturePage(container, lesson) {
   el.addEventListener('mouseup', handleTextSelection);
   el.addEventListener('touchend', handleTextSelection);
   document.getElementById('nav-audio-btn').setAttribute('data-text', lesson.scripture);
+  // Restore saved annotations for this page
+  restoreAnnotations('scripture_' + lesson.id);
 }
 
 // ===== KEY TERMS PAGE =====
@@ -424,12 +431,16 @@ function renderSketchPage(container, lesson) {
   const pageKey = 'complete_sketch_' + lesson.id;
   const isDone = getUserKey(pageKey) === 'true';
 
-  // CHANGE 4: "Use your imagination to sketch or write your insight from Luke X:XX"
+  // Sketch page dual prompt
   const sketchPrompt = 'Use your imagination to sketch or write your insight from ' + lesson.passage;
 
   container.innerHTML =
     pageHeader(lesson, 'SKETCH PAGE') +
-    '<p class="sketch-prompt-text">' + sketchPrompt + '</p>' +
+    '<div class="sketch-dual-prompt">' +
+    '<p class="sketch-prompt-top">' + sketchPrompt + '</p>' +
+    '<div class="sketch-or-divider">— or —</div>' +
+    '<p class="sketch-prompt-bottom">✍️ Sketch your understanding of this passage.</p>' +
+    '</div>' +
     '<div class="sketch-container">' +
     '<div class="sketch-tools">' +
     '<button class="tool-btn active" id="tool-pen" onclick="setTool(\'pen\')">✏️ Pen</button>' +
@@ -447,6 +458,14 @@ function renderSketchPage(container, lesson) {
     '<button class="sketch-action-btn" onclick="saveSketch(' + lesson.id + ')">💾 Save</button>' +
     '<button class="sketch-action-btn danger" onclick="clearSketch()">🗑 Clear</button>' +
     '</div></div>' +
+    '<div class="sketch-write-section">' +
+    '<div class="sketch-write-label">✍️ Write your knowledge about this passage:</div>' +
+    '<textarea class="sketch-write-field" id="sketch-write-' + lesson.id + '" ' +
+    'placeholder="Write your insight, understanding, or notes about ' + lesson.passage + '..." ' +
+    'oninput="saveSketchText(' + lesson.id + ', this.value)">' +
+    (getUserKey('sketch_text_' + lesson.id) || '') +
+    '</textarea>' +
+    '</div>' +
     completeButton(pageKey, isDone);
 
   initSketch(lesson.id);
@@ -575,10 +594,13 @@ function renderTestPage() {
   // Load saved text
   const savedText = getUserKey('test_text_' + testType + '_' + day.day) || '';
 
-  // CHANGE 9: "Write your knowledge about each passage" with a text field
+  // Test page with skip button and dual prompt
   container.innerHTML =
     '<div class="page-title">' + page.title + '</div>' +
     '<p style="font-size:0.85rem;color:#6b7280;text-align:center;padding:0 8px;">' + page.instruction + '</p>' +
+    '<div style="text-align:center;margin:8px 0;">' +
+    '<button onclick="skipTest()" style="padding:8px 20px;border-radius:20px;border:2px solid #e5e7eb;background:#f9fafb;font-size:0.8rem;font-weight:700;color:#6b7280;cursor:pointer;">⏭ Skip ' + (page.testType === 'pre' ? 'Pre' : 'Post') + '-Test</button>' +
+    '</div>' +
     '<div class="test-item">' +
     '<div class="test-day-label">Day ' + day.day + '</div>' +
     '<div class="test-passage">Use your imagination to sketch or write your knowledge about ' + day.passage + '</div>' +
@@ -602,6 +624,33 @@ function renderTestPage() {
 
 function saveTestText(day, type, value) {
   setUserData('test_text_' + type + '_' + day, value);
+}
+
+function skipTest() {
+  if (confirm('Skip the test? You can always come back to it from the home screen.')) {
+    goToSelectBook();
+  }
+}
+
+function quickSubmitToTeacher(chapterId) {
+  const student = JSON.parse(localStorage.getItem('dtwd_student') || '{}');
+  if (!student.classCode) {
+    if (confirm('You are not in a class yet. Go to your Student Dashboard to join a class and submit?')) {
+      window.location.href = 'student.html';
+    }
+    return;
+  }
+  const chapter = APP_DATA.chapters.find(c => c.id === chapterId);
+  if (confirm('Submit Chapter ' + chapterId + ': ' + chapter.title + ' to your teacher?\n\nClass: ' + student.classCode)) {
+    // Save submission
+    const subs = JSON.parse(localStorage.getItem('dtwd_submissions') || '[]');
+    if (!subs.find(s => s.chapterId === chapterId)) {
+      subs.push({ id: 'sub_' + Date.now(), chapterId, chapterTitle: 'Chapter ' + chapterId + ': ' + chapter.title,
+        studentName: student.name, classCode: student.classCode, submittedAt: Date.now(), status: 'submitted' });
+      localStorage.setItem('dtwd_submissions', JSON.stringify(subs));
+    }
+    alert('✅ Chapter ' + chapterId + ' submitted to your teacher!\n\nYour teacher will review and send feedback.');
+  }
 }
 
 // ===== PAGINATION =====
@@ -716,6 +765,11 @@ let selectedRange = null;
 function annMouseDown(e, type) {
   e.preventDefault();
   if (type === 'close') { closeAnnotationToolbar(); return; }
+  if (type === 'pen') {
+    // For pen: show a quick color picker and enable canvas draw mode
+    alert('Pen tool: Select text first, then use Pen to draw. For freehand drawing use the Sketch page.');
+    closeAnnotationToolbar(); return;
+  }
   applyAnnotation(type);
 }
 
@@ -814,6 +868,42 @@ function closeAnnotationToolbar() {
   selectedRange = null;
 }
 
+// ===== PEN DRAWING OVERLAY =====
+let isPenDrawing = false;
+let penCanvas = null;
+let penCtx = null;
+
+function startPenOverlay(container) {
+  const existing = document.getElementById('pen-overlay-canvas');
+  if (existing) existing.remove();
+  const target = container || document.querySelector('.scripture-box, .key-term-item');
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  penCanvas = document.createElement('canvas');
+  penCanvas.id = 'pen-overlay-canvas';
+  penCanvas.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;z-index:999;pointer-events:none;';
+  penCanvas.width = rect.width; penCanvas.height = rect.height;
+  document.body.appendChild(penCanvas);
+  penCtx = penCanvas.getContext('2d');
+  penCtx.strokeStyle = '#dc2626'; penCtx.lineWidth = 2; penCtx.lineCap = 'round';
+}
+
+// ===== ANNOTATION SAVE/RESTORE =====
+function saveAnnotations(pageKey) {
+  const el = document.getElementById('scripture-text') || document.querySelector('.key-terms-list');
+  if (!el) return;
+  setUserData('annotation_html_' + pageKey, el.innerHTML);
+}
+
+function restoreAnnotations(pageKey) {
+  const saved = getUserKey('annotation_html_' + pageKey);
+  if (!saved) return;
+  setTimeout(() => {
+    const el = document.getElementById('scripture-text') || document.querySelector('.key-terms-list');
+    if (el) el.innerHTML = saved;
+  }, 100);
+}
+
 document.addEventListener('mousedown', (e) => {
   const toolbar = document.getElementById('annotation-toolbar');
   if (!toolbar) return;
@@ -894,6 +984,7 @@ function setColor(v) { drawColor = v; drawTool = 'pen'; document.getElementById(
 function setBrushSize(v) { drawSize = parseInt(v); document.getElementById('brush-size-label').textContent = v; }
 function clearSketch() { if (!sketchCtx || !confirm('Clear the sketch? Cannot be undone.')) return; sketchCtx.fillStyle = '#ffffff'; sketchCtx.fillRect(0,0,sketchCanvas.width,sketchCanvas.height); saveHistory(); }
 function saveSketch(id) { if (!sketchCanvas) return; setUserData('sketch_'+id, sketchCanvas.toDataURL('image/png')); }
+function saveSketchText(id, val) { setUserData('sketch_text_'+id, val); }
 
 // ===== TEST CANVAS =====
 let testCanvases = {};
