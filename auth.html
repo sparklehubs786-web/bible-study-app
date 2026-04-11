@@ -15,13 +15,12 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
 .tabs{display:flex;background:var(--g1);border-radius:10px;padding:4px;margin-bottom:18px;gap:4px}
 .tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--g6);transition:all .2s}
 .tab.on{background:var(--w);color:var(--pd);box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.msg{border-radius:8px;padding:10px 14px;font-size:.84rem;font-weight:600;margin-bottom:12px;display:none;line-height:1.5}
+.msg{border-radius:8px;padding:10px 14px;font-size:.84rem;font-weight:600;margin-bottom:12px;display:none;line-height:1.5;word-break:break-word}
 .err{background:#fee2e2;color:#991b1b}.ok{background:var(--gl);color:var(--gd)}.info{background:#dbeafe;color:#1e40af}
 .rl{font-size:.8rem;font-weight:700;color:var(--g8);margin-bottom:8px;display:block}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .role{border:2px solid var(--g2);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s}
-.role:hover{border-color:var(--p);background:var(--pl)}
-.role.on{border-color:var(--p);background:var(--pl)}
+.role:hover,.role.on{border-color:var(--p);background:var(--pl)}
 .role.ont{border-color:var(--g)!important;background:var(--gl)!important}
 .ri{font-size:1.8rem;margin-bottom:5px}.rn{font-size:.85rem;font-weight:800;color:var(--g8)}.rp{font-size:.7rem;color:var(--g6);margin-top:2px}
 .psel{width:100%;padding:11px 14px;border:2px solid var(--g2);border-radius:10px;font-size:.88rem;outline:none;font-family:inherit;background:#f9fafb;cursor:pointer;margin-bottom:8px}
@@ -47,6 +46,8 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
 </style>
 </head>
 <body>
+
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -84,7 +85,7 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
     <div class="pinfo" id="pinfo"></div>
   </div>
 
-  <button class="btn bgo" onclick="googleAuth()">
+  <button class="btn bgo" id="btn-google" onclick="googleAuth()">
     <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G"/>
     <span id="glbl">Continue with Google</span>
   </button>
@@ -93,11 +94,11 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
   <div class="vb" id="vbanner">📧 After signing up you will receive a verification email. Click the link to activate your account before signing in.</div>
 
   <div class="fields">
-    <input class="inp" type="text"     id="fn"  placeholder="Full name"         style="display:none" autocomplete="name"/>
-    <input class="inp" type="email"    id="fe"  placeholder="Email address"      autocomplete="email"/>
-    <input class="inp" type="password" id="fp"  placeholder="Password"           autocomplete="current-password" oninput="pwStr(this.value)"/>
+    <input class="inp" type="text"     id="fn" placeholder="Full name"        style="display:none" autocomplete="name"/>
+    <input class="inp" type="email"    id="fe" placeholder="Email address"     autocomplete="email"/>
+    <input class="inp" type="password" id="fp" placeholder="Password"          autocomplete="current-password" oninput="pwStr(this.value)"/>
     <div class="ps" id="pws"></div>
-    <input class="inp" type="password" id="fc"  placeholder="Confirm password"   style="display:none" autocomplete="new-password"/>
+    <input class="inp" type="password" id="fc" placeholder="Confirm password"  style="display:none" autocomplete="new-password"/>
   </div>
 
   <div class="fgt" id="fgt-row"><a onclick="forgotPwd()">Forgot your password?</a></div>
@@ -109,21 +110,23 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
 
 <script>
 let mode='login', role='student';
-const PL={small:{l:'✅ Up to 15 students | 3-month class',p:30},medium:{l:'✅ Up to 30 students | 3-month class',p:60},large:{l:'✅ Up to 60 students | 3-month class',p:120},xl:{l:'✅ Up to 100 students | 3-month class',p:300}};
+const PL={small:{p:30},medium:{p:60},large:{p:120},xl:{p:300}};
 
+// ===== MODE / ROLE / PLAN =====
 function setMode(m){
   mode=m;
-  document.getElementById('ti').classList.toggle('on',m==='login');
-  document.getElementById('tu').classList.toggle('on',m==='signup');
-  document.getElementById('sec-role').style.display=m==='signup'?'block':'none';
-  document.getElementById('fn').style.display=m==='signup'?'block':'none';
-  document.getElementById('fc').style.display=m==='signup'?'block':'none';
-  document.getElementById('fgt-row').style.display=m==='login'?'block':'none';
-  document.getElementById('vbanner').style.display=m==='signup'?'block':'none';
-  document.getElementById('fp').autocomplete=m==='login'?'current-password':'new-password';
+  ['ti','tu'].forEach((id,i)=>document.getElementById(id).classList.toggle('on',i===(m==='login'?0:1)));
+  document.getElementById('sec-role').style.display  = m==='signup'?'block':'none';
+  document.getElementById('fn').style.display        = m==='signup'?'block':'none';
+  document.getElementById('fc').style.display        = m==='signup'?'block':'none';
+  document.getElementById('fgt-row').style.display   = m==='login'?'block':'none';
+  document.getElementById('vbanner').style.display   = m==='signup'?'block':'none';
+  document.getElementById('sec-plan').style.display  = 'none';
+  document.getElementById('fp').autocomplete         = m==='login'?'current-password':'new-password';
+  document.getElementById('glbl').textContent        = m==='login'?'Continue with Google':'Sign up with Google';
   const b=document.getElementById('bsub');
-  if(m==='login'){b.textContent='Sign In';b.className='btn bp';document.getElementById('ftext').innerHTML='Don\'t have an account? <a onclick="setMode(\'signup\')">Create one free →</a>';document.getElementById('glbl').textContent='Continue with Google';document.getElementById('sec-plan').style.display='none';}
-  else{setRole('student');document.getElementById('ftext').innerHTML='Already have an account? <a onclick="setMode(\'login\')">Sign in →</a>';document.getElementById('glbl').textContent='Sign up with Google';}
+  if(m==='login'){b.textContent='Sign In';b.className='btn bp';document.getElementById('ftext').innerHTML='Don\'t have an account? <a onclick="setMode(\'signup\')">Create one free →</a>';}
+  else{setRole('student');document.getElementById('ftext').innerHTML='Already have an account? <a onclick="setMode(\'login\')">Sign in →</a>';}
   clrMsg();
 }
 
@@ -138,7 +141,8 @@ function setRole(r){
 
 function onPlan(){
   const v=document.getElementById('plan').value,pi=document.getElementById('pinfo');
-  if(v&&PL[v]){pi.textContent=PL[v].l;pi.style.display='block';}else pi.style.display='none';
+  pi.style.display=v&&PL[v]?'block':'none';
+  if(v&&PL[v])pi.textContent='✅ $'+PL[v].p+' for 3 months | Full teacher dashboard';
   updBtn();
 }
 
@@ -157,6 +161,7 @@ function pwStr(v){
   else{el.className='ps pg';el.textContent='✅ Strong password';}
 }
 
+// ===== VALIDATE =====
 function val(){
   const e=document.getElementById('fe').value.trim(),p=document.getElementById('fp').value;
   if(!e||!e.includes('@')){showMsg('Please enter a valid email address.','err');return false;}
@@ -164,106 +169,242 @@ function val(){
   if(mode==='signup'){
     const n=document.getElementById('fn').value.trim(),c=document.getElementById('fc').value;
     if(!n){showMsg('Please enter your full name.','err');return false;}
-    if(p!==c){showMsg('Passwords do not match. Please re-enter.','err');return false;}
+    if(p!==c){showMsg('Passwords do not match.','err');return false;}
     if(role==='teacher'&&!document.getElementById('plan').value){showMsg('Please select a teacher plan.','err');return false;}
   }
   return true;
 }
 
+// ===== MAIN SUBMIT =====
 async function go(){
   if(!val())return;
-  const b=document.getElementById('bsub');b.disabled=true;b.textContent='⏳ Please wait...';clrMsg();
+  setLoading(true);clrMsg();
   const e=document.getElementById('fe').value.trim(),p=document.getElementById('fp').value,n=document.getElementById('fn').value.trim();
-  try{mode==='login'?await doLogin(e,p):await doSignup(e,p,n);}
-  catch(err){showMsg(nice(err.code||err.message),'err');b.disabled=false;mode==='login'?b.textContent='Sign In':updBtn();}
+  try{
+    if(mode==='login') await doLogin(e,p);
+    else               await doSignup(e,p,n);
+  }catch(err){
+    showMsg(nice(err.code||err.message),'err');
+    setLoading(false);
+  }
 }
 
+function setLoading(on){
+  const b=document.getElementById('bsub');
+  const g=document.getElementById('btn-google');
+  b.disabled=on; g.disabled=on;
+  if(on) b.textContent='⏳ Please wait...';
+  else { if(mode==='login') b.textContent='Sign In'; else updBtn(); }
+}
+
+// ===== LOGIN =====
 async function doLogin(email,pass){
-  const cr=await auth.signInWithEmailAndPassword(email,pass);
-  const u=cr.user;
+  let cred;
+  try {
+    cred = await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    throw e;
+  }
+  const u = cred.user;
+
+  // Check email verified
   if(!u.emailVerified){
     await auth.signOut();
-    showMsg('Please verify your email first. Check your inbox for the verification link.','info');
-    document.getElementById('bsub').disabled=false;document.getElementById('bsub').textContent='Sign In';
-    if(confirm('Resend verification email?')){await u.sendEmailVerification();showMsg('Verification email sent!','ok');}
+    showMsg('📧 Please verify your email first. Check your inbox for the verification link from Firebase.','info');
+    setLoading(false);
+    const resend = confirm('Would you like us to resend the verification email?');
+    if(resend){
+      // Re-sign in briefly to resend
+      const cr2 = await auth.signInWithEmailAndPassword(email, pass);
+      await cr2.user.sendEmailVerification();
+      await auth.signOut();
+      showMsg('✅ Verification email resent to '+email+'. Check your inbox and spam folder.','ok');
+    }
     return;
   }
-  const d=await db.collection('users').doc(u.uid).get();
-  if(d.exists){const data=d.data();save(data);go2(data.role);}
-  else{const pr={uid:u.uid,name:u.displayName||email.split('@')[0],email,role:'student',plan:'student',status:'active',createdAt:Date.now()};await db.collection('users').doc(u.uid).set(pr);save(pr);go2('student');}
+
+  // Get or create Firestore profile
+  let profile = await getOrCreateProfile(u);
+  saveSession(profile);
+  redirect(profile.role);
 }
 
+// ===== SIGNUP =====
 async function doSignup(email,pass,name){
   const pv=document.getElementById('plan').value;
+
+  // Teacher — save pending and go to payment
   if(role==='teacher'){
     localStorage.setItem('dtwd_pending_signup',JSON.stringify({email,pass,name,role,plan:pv}));
-    showMsg('Redirecting to payment...','ok');
-    setTimeout(()=>window.location.href='pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name),1500);
+    showMsg('✅ Redirecting to payment...','ok');
+    setTimeout(()=>window.location.href='pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name),1200);
     return;
   }
-  const cr=await auth.createUserWithEmailAndPassword(email,pass);
-  const u=cr.user;
-  await u.updateProfile({displayName:name});
-  await u.sendEmailVerification();
-  const pr={uid:u.uid,name,email,role:'student',plan:'student',classCode:null,teacherName:null,createdAt:Date.now(),status:'pending_payment'};
-  await db.collection('users').doc(u.uid).set(pr);
+
+  // Student — create Firebase account
+  let cred;
+  try {
+    cred = await auth.createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    throw e;
+  }
+  const u = cred.user;
+  try { await u.updateProfile({displayName:name}); } catch(e){}
+
+  // Send verification email
+  try { await u.sendEmailVerification(); } catch(e){ console.warn('Email verify error:', e); }
+
+  // Save profile to Firestore
+  const profile = {uid:u.uid,name,email,role:'student',plan:'student',classCode:null,teacherName:null,createdAt:Date.now(),status:'pending_payment'};
+  try { await db.collection('users').doc(u.uid).set(profile); } catch(e){ console.warn('Firestore write error:', e); }
+
   await auth.signOut();
-  showMsg('✅ Account created! Check '+email+' for your verification email. After verifying, complete your $7 payment.','ok');
+  setLoading(false);
+  showMsg('✅ Account created! A verification email has been sent to '+email+'. Please check your inbox (and spam folder). After verifying your email, you can sign in.','ok');
+  // Store pending for payment
   localStorage.setItem('dtwd_pending_signup',JSON.stringify({email,pass,name,role:'student',plan:'student',uid:u.uid}));
-  setTimeout(()=>window.location.href='pricing.html?plan=student&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name),3000);
 }
 
+// ===== GOOGLE AUTH =====
 async function googleAuth(){
-  clrMsg();
-  try{
-    const pr=new firebase.auth.GoogleAuthProvider();
-    const cr=await auth.signInWithPopup(pr);
-    const u=cr.user;
-    const d=await db.collection('users').doc(u.uid).get();
-    if(d.exists){const data=d.data();save(data);go2(data.role);}
-    else{
-      const nr=mode==='signup'?role:'student';
-      const pv=nr==='teacher'?document.getElementById('plan').value:'student';
-      if(nr==='teacher'&&!pv){showMsg('Please select a teacher plan.','err');await auth.signOut();return;}
-      const profile={uid:u.uid,name:u.displayName||'',email:u.email,role:nr,plan:pv,classCode:nr==='teacher'?genCode():null,teacherName:null,createdAt:Date.now(),status:nr==='student'?'pending_payment':'pending_payment'};
-      await db.collection('users').doc(u.uid).set(profile);
-      localStorage.setItem('dtwd_pending_signup',JSON.stringify(profile));
-      window.location.href='pricing.html?plan='+(pv||'student')+'&email='+encodeURIComponent(u.email)+'&name='+encodeURIComponent(u.displayName||'');
-    }
-  }catch(e){showMsg(nice(e.code||e.message),'err');}
+  setLoading(true); clrMsg();
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // Use redirect instead of popup to avoid popup blocked issues on GitHub Pages
+    await auth.signInWithRedirect(provider);
+    // Result handled in onAuthStateChanged below after redirect
+  } catch(e) {
+    showMsg(nice(e.code||e.message),'err');
+    setLoading(false);
+  }
 }
 
+// Handle Google redirect result on page load
+async function handleRedirectResult(){
+  try {
+    const result = await auth.getRedirectResult();
+    if(!result || !result.user) return; // No redirect result
+    const u = result.user;
+    let profile = await getOrCreateProfile(u);
+    // New Google user — handle role assignment
+    if(profile._isNew){
+      const nr = role;
+      const pv = nr==='teacher' ? document.getElementById('plan').value : 'student';
+      if(nr==='teacher' && !pv){
+        showMsg('Please select a teacher plan.','err');
+        await auth.signOut();
+        setLoading(false);
+        return;
+      }
+      profile = {uid:u.uid,name:u.displayName||'',email:u.email,role:nr,plan:pv||'student',classCode:nr==='teacher'?genCode():null,teacherName:null,createdAt:Date.now(),status:'active'};
+      try{ await db.collection('users').doc(u.uid).set(profile); }catch(e){ console.warn(e); }
+      if(nr==='student'){
+        // Go to payment for student
+        localStorage.setItem('dtwd_pending_signup',JSON.stringify(profile));
+        window.location.href='pricing.html?plan=student&email='+encodeURIComponent(u.email)+'&name='+encodeURIComponent(u.displayName||'');
+        return;
+      } else {
+        localStorage.setItem('dtwd_pending_signup',JSON.stringify(profile));
+        window.location.href='pricing.html?plan='+(pv||'medium')+'&email='+encodeURIComponent(u.email);
+        return;
+      }
+    }
+    saveSession(profile);
+    redirect(profile.role);
+  } catch(e) {
+    if(e.code !== 'auth/no-auth-event') {
+      showMsg(nice(e.code||e.message),'err');
+    }
+    setLoading(false);
+  }
+}
+
+// ===== GET OR CREATE FIRESTORE PROFILE =====
+async function getOrCreateProfile(u){
+  try {
+    const doc = await db.collection('users').doc(u.uid).get();
+    if(doc.exists) return doc.data();
+    // New user — return marker
+    return {_isNew:true, uid:u.uid, name:u.displayName||'', email:u.email};
+  } catch(e) {
+    console.warn('Firestore read error:', e.message);
+    // Firestore blocked — create minimal profile from auth data
+    return {uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student', plan:'student', status:'active'};
+  }
+}
+
+// ===== FORGOT PASSWORD =====
 async function forgotPwd(){
   let e=document.getElementById('fe').value.trim();
-  if(!e||!e.includes('@')){e=prompt('Enter your email address:');if(!e)return;}
-  try{await auth.sendPasswordResetEmail(e);showMsg('✅ Password reset email sent to '+e+'. Check your inbox.','ok');}
-  catch(e2){showMsg(nice(e2.code),'err');}
+  if(!e||!e.includes('@')){e=prompt('Enter your email address to reset your password:');if(!e)return;}
+  try{
+    await auth.sendPasswordResetEmail(e);
+    showMsg('✅ Password reset email sent to '+e+'. Check your inbox and spam folder.','ok');
+  }catch(err){showMsg(nice(err.code),'err');}
 }
 
-function save(d){
-  if(d.role==='teacher'){localStorage.setItem('dtwd_teacher',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||genCode(),plan:d.plan,maxStudents:{small:15,medium:30,large:60,xl:100}[d.plan]||30,expiresAt:d.expiresAt||(Date.now()+90*24*60*60*1000)}));}
-  else{localStorage.setItem('dtwd_student',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||null,teacherName:d.teacherName||null,plan:'student',purchasedAt:d.purchasedAt||Date.now()}));}
+// ===== SESSION SAVE & REDIRECT =====
+function saveSession(d){
+  if(d.role==='teacher'){
+    localStorage.setItem('dtwd_teacher',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||genCode(),plan:d.plan,maxStudents:{small:15,medium:30,large:60,xl:100}[d.plan]||30,expiresAt:d.expiresAt||(Date.now()+90*24*60*60*1000)}));
+  } else {
+    localStorage.setItem('dtwd_student',JSON.stringify({uid:d.uid,name:d.name,email:d.email,classCode:d.classCode||null,teacherName:d.teacherName||null,plan:'student',purchasedAt:d.purchasedAt||Date.now()}));
+  }
 }
 
-function go2(r){r==='teacher'?window.location.href='dashboard.html':window.location.href='student.html';}
+function redirect(r){ window.location.href = r==='teacher' ? 'dashboard.html' : 'student.html'; }
 function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='DTWD-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+
+// ===== MESSAGES =====
 function showMsg(t,c){const el=document.getElementById('msg');el.textContent=t;el.className='msg '+c;el.style.display='block';}
 function clrMsg(){document.getElementById('msg').style.display='none';}
-function nice(c){const m={'auth/user-not-found':'No account found. Please check your email or create an account.','auth/wrong-password':'Incorrect password. Please try again.','auth/email-already-in-use':'An account with this email already exists. Please sign in.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password must be at least 6 characters.','auth/too-many-requests':'Too many attempts. Please wait a few minutes.','auth/popup-closed-by-user':'Sign-in was cancelled. Please try again.','auth/invalid-credential':'Email or password is incorrect. Please try again.'};return m[c]||'Something went wrong. Please try again.';}
 
-// Auto-redirect if already logged in
-auth.onAuthStateChanged(u=>{
-  if(u&&u.emailVerified){
-    db.collection('users').doc(u.uid).get().then(d=>{
-      if(d.exists&&d.data().status==='active'){save(d.data());go2(d.data().role);}
-    });
-  }
-});
+// ===== FRIENDLY ERRORS =====
+function nice(c){
+  const m={
+    'auth/user-not-found':       'No account found with that email. Please check or create an account.',
+    'auth/wrong-password':       'Incorrect password. Please try again or use Forgot Password.',
+    'auth/invalid-credential':   'Email or password is incorrect. Please try again.',
+    'auth/email-already-in-use': 'An account with this email already exists. Please sign in instead.',
+    'auth/invalid-email':        'Please enter a valid email address.',
+    'auth/weak-password':        'Password must be at least 6 characters.',
+    'auth/too-many-requests':    'Too many attempts. Please wait a few minutes and try again.',
+    'auth/popup-closed-by-user': 'Sign-in was cancelled. Please try again.',
+    'auth/popup-blocked':        'Popup was blocked. Please allow popups for this site and try again.',
+    'auth/network-request-failed':'Network error. Please check your internet connection.',
+    'auth/cancelled-popup-request':'Only one sign-in window allowed at a time. Please try again.',
+  };
+  return m[c] || 'Something went wrong ('+c+'). Please try again.';
+}
 
-window.addEventListener('DOMContentLoaded',()=>{
+// ===== ON PAGE LOAD =====
+window.addEventListener('DOMContentLoaded', async ()=>{
+  // Handle Google redirect result first
+  await handleRedirectResult();
+
+  // Check URL params
   const p=new URLSearchParams(window.location.search);
   if(p.get('role')==='teacher'){setMode('signup');setRole('teacher');}
   else if(p.get('signup')==='1')setMode('signup');
+
+  // If already logged in and verified, redirect immediately
+  auth.onAuthStateChanged(async u=>{
+    if(u && u.emailVerified){
+      try {
+        const doc = await db.collection('users').doc(u.uid).get();
+        if(doc.exists && doc.data().status==='active'){
+          saveSession(doc.data());
+          redirect(doc.data().role);
+        }
+      } catch(e){
+        // Firestore blocked — use auth data only
+        const savedTeacher = localStorage.getItem('dtwd_teacher');
+        const savedStudent = localStorage.getItem('dtwd_student');
+        if(savedTeacher) redirect('teacher');
+        else if(savedStudent) redirect('student');
+      }
+    }
+  });
 });
 </script>
 </body>
