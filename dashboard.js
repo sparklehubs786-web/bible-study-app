@@ -10,18 +10,27 @@ let allSubmissions = [];
 // ===== INIT — Firebase auth check =====
 window.addEventListener('DOMContentLoaded', () => {
   showLoading(true);
-  const loadTimeout = setTimeout(()=>{
-    showLoading(false);
-    showErrorPage('Connection timed out. Please <a href="auth.html">sign in again</a>.');
-  }, 10000);
-
   auth.onAuthStateChanged(async user => {
-    clearTimeout(loadTimeout);
     if (!user) { window.location.href = 'auth.html'; return; }
     if (!user.emailVerified) { window.location.href = 'auth.html'; return; }
+
+    // PRIMARY: Try localStorage first
+    const savedTeacher = localStorage.getItem('dtwd_teacher');
+    if (savedTeacher) {
+      try {
+        currentTeacher = JSON.parse(savedTeacher);
+        currentTeacher.uid = user.uid;
+        showLoading(false);
+        showDashboard();
+      } catch(e) {}
+    }
+
     try {
       const doc = await db.collection('users').doc(user.uid).get();
-      if (!doc.exists) { window.location.href = 'auth.html'; return; }
+      if (!doc.exists) {
+        if (!savedTeacher) { window.location.href = 'auth.html'; return; }
+        return;
+      }
       const data = doc.data();
       if (data.role !== 'teacher') { window.location.href = 'student.html'; return; }
       currentTeacher = {
@@ -40,8 +49,12 @@ window.addEventListener('DOMContentLoaded', () => {
       showLoading(false);
       showDashboard();
     } catch(e) {
-      showLoading(false);
-      showErrorPage('Could not load your profile: ' + e.message);
+      console.warn('Firestore error in dashboard:', e.message);
+      if (!savedTeacher) {
+        showLoading(false);
+        showErrorPage('Could not connect to database. Please check Firestore rules and <a href="auth.html">try again</a>.');
+      }
+      // If savedTeacher exists, dashboard already showing from localStorage
     }
   });
 });
