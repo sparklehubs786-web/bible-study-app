@@ -10,9 +10,15 @@ let allSubmissions = [];
 // ===== INIT — Firebase auth check =====
 window.addEventListener('DOMContentLoaded', () => {
   showLoading(true);
+  const loadTimeout = setTimeout(()=>{
+    showLoading(false);
+    showErrorPage('Connection timed out. Please <a href="auth.html">sign in again</a>.');
+  }, 10000);
+
   auth.onAuthStateChanged(async user => {
+    clearTimeout(loadTimeout);
     if (!user) { window.location.href = 'auth.html'; return; }
-    if (!user.emailVerified) { window.location.href = 'auth.html?msg=verify'; return; }
+    if (!user.emailVerified) { window.location.href = 'auth.html'; return; }
     try {
       const doc = await db.collection('users').doc(user.uid).get();
       if (!doc.exists) { window.location.href = 'auth.html'; return; }
@@ -90,9 +96,7 @@ async function loadStudents() {
 async function loadSubmissions() {
   try {
     const snap = await db.collection('submissions')
-      .where('classCode', '==', currentTeacher.classCode)
-      .orderBy('submittedAt', 'desc')
-      .get();
+      .where('classCode', '==', currentTeacher.classCode).get();
     allSubmissions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     // Attach submissions to students
     allStudents.forEach(student => {
