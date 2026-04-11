@@ -1,412 +1,197 @@
-// ===== STUDENT DASHBOARD =====
-
+// ===== STUDENT DASHBOARD — REAL FIREBASE =====
 let currentStudent = null;
-let studentClass = null;
 let currentSubmitChapterId = null;
 
-// ===== DEMO DATA =====
-const DEMO_STUDENT = {
-  id: 'stu1',
-  name: 'Student Demo',
-  email: 'student@demo.com',
-  classCode: 'DTWD-ABC123',
-  teacherName: 'Teacher Demo',
-  plan: 'student',
-  purchasedAt: Date.now() - (7 * 24 * 60 * 60 * 1000),
-  classExpiresAt: Date.now() + (60 * 24 * 60 * 60 * 1000)
-};
-
-const DEMO_FEEDBACK = [
-  {
-    id: 'fb1', chapterId: 1, chapterTitle: "Chapter 1: Christ's Ministry",
-    lessonNum: 1, gradedAt: Date.now() - (2 * 24 * 60 * 60 * 1000),
-    grade: 'A', gradeStyle: 'letter',
-    comment: 'Excellent work! Your answers show deep understanding of the scriptures. Keep pressing forward in your study. God bless you!'
-  },
-  {
-    id: 'fb2', chapterId: 1, chapterTitle: "Chapter 1: Christ's Ministry",
-    lessonNum: 2, gradedAt: Date.now() - (1 * 24 * 60 * 60 * 1000),
-    grade: 'Excellent', gradeStyle: 'ministry',
-    comment: 'Beautiful insight on how Christ laid His hands on everyone. Your sketch page was very creative!'
-  }
-];
-
-// ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('dtwd_student');
-  if (saved) {
-    currentStudent = JSON.parse(saved);
-    showDashboard();
-  }
+  showLoading(true);
+  auth.onAuthStateChanged(async user => {
+    if (!user) { window.location.href = 'auth.html'; return; }
+    if (!user.emailVerified) { showLoading(false); showVerifyPrompt(user); return; }
+    try {
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) { window.location.href = 'auth.html'; return; }
+      const data = doc.data();
+      if (data.role === 'teacher') { window.location.href = 'dashboard.html'; return; }
+      currentStudent = { uid:user.uid, name:data.name||user.displayName||user.email.split('@')[0], email:user.email, classCode:data.classCode||null, teacherName:data.teacherName||null, plan:'student', purchasedAt:data.purchasedAt||Date.now(), classExpiresAt:data.classExpiresAt||null };
+      localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
+      showLoading(false);
+      showDashboard();
+    } catch(e) { showLoading(false); showError('Could not load your profile. Please refresh the page.'); }
+  });
 });
 
-// ===== LOGIN =====
-function loginGoogle() {
-  // In production: Firebase Google Auth
-  currentStudent = DEMO_STUDENT;
-  localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-
-  // Check if student has a class
-  if (currentStudent.classCode) {
-    showDashboard();
-  } else {
-    showSetup();
+function showLoading(on) {
+  let el = document.getElementById('loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-overlay';
+    el.style.cssText = 'position:fixed;inset:0;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;font-family:inherit;gap:16px;';
+    el.innerHTML = '<div style="font-size:3rem;">🙏</div><div style="font-size:1rem;font-weight:700;">Loading your dashboard...</div><div style="width:40px;height:40px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(el);
   }
+  el.style.display = on ? 'flex' : 'none';
 }
 
-function loginEmail() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value.trim();
-  if (!email || !pass) { alert('Please enter your email and password.'); return; }
-
-  // Demo: accept any credentials
-  currentStudent = { ...DEMO_STUDENT, email };
-  localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-
-  if (currentStudent.classCode) showDashboard();
-  else showSetup();
+function showError(msg) {
+  document.body.innerHTML = '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;"><div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div><h2 style="color:#dc2626;margin-bottom:10px;">Error</h2><p style="color:#4b5563;margin-bottom:20px;">'+msg+'</p><button onclick="location.reload()" style="padding:12px 24px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;">Try Again</button></div></div>';
 }
 
-function logout() {
-  localStorage.removeItem('dtwd_student');
-  currentStudent = null;
-  document.getElementById('screen-dashboard').classList.remove('active');
-  document.getElementById('screen-login').classList.add('active');
+function showVerifyPrompt(user) {
+  document.body.innerHTML = '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px 28px;max-width:400px;width:100%;text-align:center;"><div style="font-size:3rem;margin-bottom:12px;">📧</div><h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Verify Your Email</h2><p style="font-size:.88rem;color:#4b5563;margin-bottom:20px;line-height:1.6;">We sent a verification email to <strong>'+user.email+'</strong>.<br><br>Please check your inbox and spam folder, then click the link to activate your account.</p><button onclick="resendVerify()" style="width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:10px;">📧 Resend Verification Email</button><button onclick="auth.signOut().then(()=>window.location.href=\'auth.html\')" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">← Back to Login</button></div></div>';
 }
 
-// ===== SETUP =====
-function showSetup() {
-  document.getElementById('screen-login').classList.remove('active');
-  document.getElementById('screen-setup').classList.add('active');
+async function resendVerify() {
+  try { const u = auth.currentUser; if(u){await u.sendEmailVerification();alert('✅ Verification email resent! Check your inbox.');} } catch(e){alert('Error: '+e.message);}
 }
 
-function showJoinClass() {
-  document.getElementById('join-class-form').classList.remove('hidden');
-}
-
-function skipClass() {
-  showDashboard();
-}
-
-function joinClass() {
-  const code = document.getElementById('class-code-input').value.trim().toUpperCase();
-  if (!code || code.length < 6) { alert('Please enter a valid class code.'); return; }
-  currentStudent.classCode = code;
-  localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-  alert('✅ Successfully joined class with code: ' + code + '\n\nYour teacher can now see your submissions!');
-  showDashboard();
-}
-
-// ===== SHOW DASHBOARD =====
 function showDashboard() {
-  document.getElementById('screen-login').classList.remove('active');
-  document.getElementById('screen-setup').classList.remove('active');
   document.getElementById('screen-dashboard').classList.add('active');
-
-  // Set name badge
-  const nameEl = document.getElementById('student-name-badge');
-  nameEl.textContent = '👤 ' + currentStudent.name;
-
-  // Welcome
-  document.getElementById('welcome-name').textContent = 'Welcome, ' + currentStudent.name + '! 🙏';
-  document.getElementById('welcome-class').textContent = currentStudent.classCode
-    ? '📚 Class: ' + currentStudent.classCode + (currentStudent.teacherName ? ' — Teacher: ' + currentStudent.teacherName : '')
-    : '📖 Studying independently';
-
-  loadUserData();
-  updateWelcomeStats();
-  renderProgressTab();
-  renderSubmissionsTab();
-  renderFeedbackTab();
-  renderClassTab();
+  document.getElementById('student-name-badge').textContent = '👤 ' + currentStudent.name;
+  document.getElementById('welcome-name').textContent  = 'Welcome, ' + currentStudent.name + '! 🙏';
+  document.getElementById('welcome-class').textContent = currentStudent.classCode ? '📚 Class: '+currentStudent.classCode+(currentStudent.teacherName?' — Teacher: '+currentStudent.teacherName:'') : '📖 No class yet — go to My Class tab to join one';
+  loadUserData(); updateWelcomeStats(); renderProgressTab(); renderSubmissionsTab(); renderFeedbackTab(); renderClassTab();
 }
 
-// ===== LOCAL STORAGE =====
 let userData = {};
-function loadUserData() {
-  try {
-    const saved = localStorage.getItem('dtwd_userdata');
-    if (saved) userData = JSON.parse(saved);
-  } catch(e) { userData = {}; }
-}
+function loadUserData() { try{const s=localStorage.getItem('dtwd_userdata');if(s)userData=JSON.parse(s);}catch(e){userData={};} }
+function getUserKey(k) { return userData[k]||''; }
 
-function getUserKey(key) { return userData[key] || ''; }
-
-// ===== STATS =====
 function updateWelcomeStats() {
-  // Count completed lessons (prayer_after = lesson fully done)
-  let completedLessons = 0;
-  let submittedChapters = 0;
-  let gradedChapters = 0;
-
-  APP_DATA.lessons.forEach(lesson => {
-    if (getUserKey('complete_prayer_' + lesson.id + '_after') === 'true') completedLessons++;
-  });
-
-  const submissions = getSubmissions();
-  submittedChapters = submissions.length;
-  gradedChapters = DEMO_FEEDBACK.length;
-
-  document.getElementById('ws-completed').textContent = completedLessons;
-  document.getElementById('ws-submitted').textContent = submittedChapters;
-  document.getElementById('ws-graded').textContent = gradedChapters;
+  let done=0;
+  APP_DATA.lessons.forEach(l=>{if(getUserKey('complete_prayer_'+l.id+'_after')==='true')done++;});
+  const subs=getSubmissions();
+  document.getElementById('ws-completed').textContent=done;
+  document.getElementById('ws-submitted').textContent=subs.length;
+  if(currentStudent.uid){
+    db.collection('feedback').where('studentUid','==',currentStudent.uid).get()
+      .then(snap=>{document.getElementById('ws-graded').textContent=snap.size;})
+      .catch(()=>{document.getElementById('ws-graded').textContent=0;});
+  } else { document.getElementById('ws-graded').textContent=0; }
 }
 
-// ===== PROGRESS TAB =====
 function renderProgressTab() {
-  const container = document.getElementById('progress-list');
-  container.innerHTML = '';
-
-  APP_DATA.chapters.forEach(ch => {
-    const lessons = ch.lessons.map(lid => APP_DATA.lessons.find(l => l.id === lid)).filter(Boolean);
-    const totalPages = lessons.length * 8; // approx pages per lesson
-    let donePages = 0;
-
-    const pageTypes = ['prayer_before', 'scripture', 'key_terms', 'treasure_chest', 'questions', 'sketch', 'greater_works', 'prayer_after'];
-    lessons.forEach(lesson => {
-      pageTypes.forEach(type => {
-        const key = type === 'prayer_before' ? 'complete_prayer_' + lesson.id + '_before'
-          : type === 'prayer_after' ? 'complete_prayer_' + lesson.id + '_after'
-          : type === 'scripture' ? 'complete_scripture_' + lesson.id
-          : type === 'key_terms' ? 'complete_keyterms_' + lesson.id
-          : type === 'treasure_chest' ? 'complete_treasure_' + lesson.id
-          : type === 'questions' ? 'complete_questions_' + lesson.id
-          : type === 'sketch' ? 'complete_sketch_' + lesson.id
-          : type === 'greater_works' ? 'complete_gw_' + lesson.id
-          : null;
-        if (key && getUserKey(key) === 'true') donePages++;
+  const container=document.getElementById('progress-list'); container.innerHTML='';
+  APP_DATA.chapters.forEach(ch=>{
+    const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
+    const types=['prayer_before','scripture','key_terms','treasure_chest','questions','sketch','greater_works','prayer_after'];
+    let dp=0,tp=lessons.length*types.length;
+    lessons.forEach(lesson=>{
+      types.forEach(type=>{
+        const key=type==='prayer_before'?'complete_prayer_'+lesson.id+'_before':type==='prayer_after'?'complete_prayer_'+lesson.id+'_after':type==='scripture'?'complete_scripture_'+lesson.id:type==='key_terms'?'complete_keyterms_'+lesson.id:type==='treasure_chest'?'complete_treasure_'+lesson.id:type==='questions'?'complete_questions_'+lesson.id:type==='sketch'?'complete_sketch_'+lesson.id:'complete_gw_'+lesson.id;
+        if(getUserKey(key)==='true')dp++;
       });
     });
-
-    const pct = totalPages > 0 ? Math.round((donePages / totalPages) * 100) : 0;
-    const isDone = pct === 100;
-
-    // Lesson dots
-    const lessonDots = lessons.map(lesson => {
-      const lessonDone = getUserKey('complete_prayer_' + lesson.id + '_after') === 'true';
-      const lessonStarted = getUserKey('complete_scripture_' + lesson.id) === 'true';
-      const cls = lessonDone ? 'done' : lessonStarted ? 'partial' : 'empty';
-      return '<div class="lesson-dot ' + cls + '" title="Lesson ' + lesson.number + ': ' + lesson.title + '">' +
-        lesson.number + '</div>';
-    }).join('');
-
-    const el = document.createElement('div');
-    el.className = 'progress-chapter';
-    el.innerHTML =
-      '<div class="progress-chapter-header">' +
-      '<div class="progress-chapter-title">Chapter ' + ch.id + ': ' + ch.title + '</div>' +
-      '<div class="progress-pct' + (isDone ? ' done' : '') + '">' + pct + '%' + (isDone ? ' ✅' : '') + '</div>' +
-      '</div>' +
-      '<div class="progress-bar-bg"><div class="progress-bar-fill' + (isDone ? ' done' : '') + '" style="width:' + pct + '%"></div></div>' +
-      '<div class="progress-lessons">' + lessonDots + '</div>';
-
+    const pct=tp>0?Math.round((dp/tp)*100):0,isDone=pct===100;
+    const dots=lessons.map(l=>{const d=getUserKey('complete_prayer_'+l.id+'_after')==='true',s=getUserKey('complete_scripture_'+l.id)==='true';return'<div class="lesson-dot '+(d?'done':s?'partial':'empty')+'" title="Lesson '+l.number+'">'+l.number+'</div>';}).join('');
+    const el=document.createElement('div');el.className='progress-chapter';
+    el.innerHTML='<div class="progress-chapter-header"><div class="progress-chapter-title">Chapter '+ch.id+': '+ch.title+'</div><div class="progress-pct'+(isDone?' done':'')+'">'+pct+'%'+(isDone?' ✅':'')+'</div></div><div class="progress-bar-bg"><div class="progress-bar-fill'+(isDone?' done':'')+'" style="width:'+pct+'%"></div></div><div class="progress-lessons">'+dots+'</div>';
     container.appendChild(el);
   });
 }
 
-// ===== SUBMISSIONS TAB =====
-function getSubmissions() {
-  try {
-    const saved = localStorage.getItem('dtwd_submissions');
-    return saved ? JSON.parse(saved) : [];
-  } catch(e) { return []; }
-}
-
-function saveSubmissions(subs) {
-  localStorage.setItem('dtwd_submissions', JSON.stringify(subs));
-}
+function getSubmissions(){try{return JSON.parse(localStorage.getItem('dtwd_submissions')||'[]');}catch(e){return[];}}
+function saveSubmissions(s){localStorage.setItem('dtwd_submissions',JSON.stringify(s));}
 
 function renderSubmissionsTab() {
-  const container = document.getElementById('submit-list');
-  container.innerHTML = '';
-  const submissions = getSubmissions();
-
-  APP_DATA.chapters.forEach(ch => {
-    const lessons = ch.lessons.map(lid => APP_DATA.lessons.find(l => l.id === lid)).filter(Boolean);
-    const allDone = lessons.every(lesson => getUserKey('complete_prayer_' + lesson.id + '_after') === 'true');
-    const anyDone = lessons.some(lesson => getUserKey('complete_prayer_' + lesson.id + '_after') === 'true');
-    const alreadySubmitted = submissions.some(s => s.chapterId === ch.id);
-
-    let btnClass = 'btn-submit';
-    let btnText = '📬 Submit to Teacher';
-    let statusText = lessons.filter(l => getUserKey('complete_prayer_' + l.id + '_after') === 'true').length + '/' + lessons.length + ' lessons completed';
-
-    if (!currentStudent.classCode) {
-      btnClass = 'btn-submit not-ready';
-      btnText = '🔗 Join a Class First';
-    } else if (alreadySubmitted) {
-      btnClass = 'btn-submit submitted';
-      btnText = '✅ Submitted';
-    } else if (!anyDone) {
-      btnClass = 'btn-submit not-ready';
-      btnText = '🔒 Complete Lessons First';
-    }
-
-    const el = document.createElement('div');
-    el.className = 'submit-item';
-    el.innerHTML =
-      '<div class="submit-item-info">' +
-      '<div class="submit-item-title">Chapter ' + ch.id + ': ' + ch.title + '</div>' +
-      '<div class="submit-item-sub">' + statusText + (alreadySubmitted ? ' • ✅ Submitted to teacher' : '') + '</div>' +
-      '</div>' +
-      '<button class="' + btnClass + '" onclick="openSubmitModal(' + ch.id + ')">' + btnText + '</button>';
-
+  const container=document.getElementById('submit-list');container.innerHTML='';
+  const subs=getSubmissions();
+  APP_DATA.chapters.forEach(ch=>{
+    const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
+    const anyDone=lessons.some(l=>getUserKey('complete_prayer_'+l.id+'_after')==='true');
+    const submitted=subs.some(s=>s.chapterId===ch.id);
+    let btnClass='btn-submit',btnText='📬 Submit to Teacher';
+    const statusText=lessons.filter(l=>getUserKey('complete_prayer_'+l.id+'_after')==='true').length+'/'+lessons.length+' lessons completed';
+    if(!currentStudent.classCode){btnClass='btn-submit not-ready';btnText='🔗 Join a Class First';}
+    else if(submitted){btnClass='btn-submit submitted';btnText='✅ Submitted';}
+    else if(!anyDone){btnClass='btn-submit not-ready';btnText='🔒 Complete Lessons First';}
+    const el=document.createElement('div');el.className='submit-item';
+    el.innerHTML='<div class="submit-item-info"><div class="submit-item-title">Chapter '+ch.id+': '+ch.title+'</div><div class="submit-item-sub">'+statusText+(submitted?' • ✅ Submitted':'')+'</div></div><button class="'+btnClass+'" onclick="openSubmitModal('+ch.id+')">'+btnText+'</button>';
     container.appendChild(el);
   });
 }
 
 function openSubmitModal(chapterId) {
-  const submissions = getSubmissions();
-  if (submissions.some(s => s.chapterId === chapterId)) return;
-  if (!currentStudent.classCode) { alert('Please join a class first to submit your work.'); return; }
-
-  const chapter = APP_DATA.chapters.find(c => c.id === chapterId);
-  const lessons = chapter.lessons.map(lid => APP_DATA.lessons.find(l => l.id === lid)).filter(Boolean);
-  const completedCount = lessons.filter(l => getUserKey('complete_prayer_' + l.id + '_after') === 'true').length;
-
-  currentSubmitChapterId = chapterId;
-
-  document.getElementById('submit-modal-chapter').textContent = 'Chapter ' + chapter.id + ': ' + chapter.title;
-  document.getElementById('submit-summary').innerHTML =
-    '<strong>What will be submitted:</strong><br>' +
-    '✅ ' + completedCount + ' of ' + lessons.length + ' lessons completed<br>' +
-    '📝 All your answers and notes<br>' +
-    '🎨 Your sketch pages<br>' +
-    '💎 Your treasure chest notes<br>' +
-    '📖 Your personal application<br><br>' +
-    '<strong>Sending to:</strong> ' + (currentStudent.teacherName || 'Your Teacher') + ' (Class: ' + currentStudent.classCode + ')';
-
+  const subs=getSubmissions();
+  if(subs.some(s=>s.chapterId===chapterId))return;
+  if(!currentStudent.classCode){alert('Please join a class first to submit your work.');return;}
+  const ch=APP_DATA.chapters.find(c=>c.id===chapterId);
+  const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
+  const done=lessons.filter(l=>getUserKey('complete_prayer_'+l.id+'_after')==='true').length;
+  currentSubmitChapterId=chapterId;
+  document.getElementById('submit-modal-chapter').textContent='Chapter '+ch.id+': '+ch.title;
+  document.getElementById('submit-summary').innerHTML='<strong>What will be submitted:</strong><br>✅ '+done+' of '+lessons.length+' lessons completed<br>📝 All your answers and notes<br>🎨 Your sketch pages<br>💎 Treasure chest notes<br><br><strong>Sending to:</strong> '+(currentStudent.teacherName||'Your Teacher')+' (Class: '+currentStudent.classCode+')';
   document.getElementById('submit-modal').classList.remove('hidden');
 }
 
-function finalSubmit() {
-  if (!currentSubmitChapterId) return;
-
-  const chapter = APP_DATA.chapters.find(c => c.id === currentSubmitChapterId);
-  const message = document.getElementById('submit-message').value.trim();
-  const lessons  = chapter.lessons.map(lid => APP_DATA.lessons.find(l => l.id === lid)).filter(Boolean);
-
-  // Build submission data
-  const submission = {
-    id: 'sub_' + Date.now(),
-    chapterId: currentSubmitChapterId,
-    chapterTitle: 'Chapter ' + chapter.id + ': ' + chapter.title,
-    studentId: currentStudent.id,
-    studentName: currentStudent.name,
-    classCode: currentStudent.classCode,
-    message,
-    submittedAt: Date.now(),
-    status: 'submitted',
-    answers: {},
-    treasureNotes: {},
-    personalApp: getUserKey('personal_' + chapter.id)
-  };
-
-  // Collect all answers
-  lessons.forEach(lesson => {
-    const qKey = 'questions_' + lesson.id;
-    try { submission.answers[lesson.id] = JSON.parse(getUserKey(qKey) || '{}'); } catch(e) {}
-    const tKey = 'treasure_' + lesson.id;
-    try { submission.treasureNotes[lesson.id] = JSON.parse(getUserKey(tKey) || '{}'); } catch(e) {}
+async function finalSubmit() {
+  if(!currentSubmitChapterId)return;
+  const ch=APP_DATA.chapters.find(c=>c.id===currentSubmitChapterId);
+  const message=document.getElementById('submit-message').value.trim();
+  const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
+  let answers={},treasureNotes={};
+  lessons.forEach(lesson=>{
+    try{answers[lesson.id]=JSON.parse(getUserKey('questions_'+lesson.id)||'{}');}catch(e){}
+    try{treasureNotes[lesson.id]=JSON.parse(getUserKey('treasure_'+lesson.id)||'{}');}catch(e){}
   });
-
-  // Save locally
-  const submissions = getSubmissions();
-  submissions.push(submission);
-  saveSubmissions(submissions);
-
-  // In production: save to Firebase
-  // firebase.database().ref('submissions/' + submission.id).set(submission)
-
+  const submission={studentUid:currentStudent.uid,studentName:currentStudent.name,studentEmail:currentStudent.email,classCode:currentStudent.classCode,chapterId:currentSubmitChapterId,chapterTitle:'Chapter '+ch.id+': '+ch.title,message,answers,treasureNotes,personalApp:getUserKey('personal_'+currentSubmitChapterId),submittedAt:Date.now(),status:'submitted'};
+  try{await db.collection('submissions').add(submission);}catch(e){console.warn('Firestore error:',e);}
+  const subs=getSubmissions();subs.push({...submission,id:'sub_'+Date.now()});saveSubmissions(subs);
   closeModal('submit-modal');
-
-  document.getElementById('success-msg').innerHTML =
-    'Chapter ' + chapter.id + ' has been submitted to your teacher!<br><br>' +
-    'Your teacher will review your work and provide feedback soon. 🙏';
+  document.getElementById('success-msg').innerHTML='Chapter '+ch.id+' submitted to your teacher! 🙏<br><br>Your teacher will review and send feedback soon.';
   document.getElementById('success-modal').classList.remove('hidden');
-
-  // Refresh tabs
-  renderSubmissionsTab();
-  updateWelcomeStats();
+  renderSubmissionsTab();updateWelcomeStats();
 }
 
-// ===== FEEDBACK TAB =====
-function renderFeedbackTab() {
-  const container = document.getElementById('feedback-list');
-  container.innerHTML = '';
-
-  if (DEMO_FEEDBACK.length === 0) {
-    container.innerHTML =
-      '<div class="feedback-empty"><div>📬</div>No feedback yet. Submit a chapter to your teacher to receive grades and comments.</div>';
-    return;
+async function renderFeedbackTab() {
+  const container=document.getElementById('feedback-list');
+  container.innerHTML='<div style="text-align:center;padding:20px;color:#9ca3af;font-size:.88rem;">Loading feedback...</div>';
+  try {
+    if(!currentStudent.uid)throw new Error('no uid');
+    const snap=await db.collection('feedback').where('studentUid','==',currentStudent.uid).orderBy('gradedAt','desc').get();
+    container.innerHTML='';
+    if(snap.empty){container.innerHTML='<div class="feedback-empty"><div>📬</div>No feedback yet. Submit a chapter to your teacher to receive grades and comments.</div>';return;}
+    snap.forEach(doc=>{
+      const fb=doc.data();
+      const date=new Date(fb.gradedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const el=document.createElement('div');el.className='feedback-card';
+      el.innerHTML='<div class="feedback-header"><div class="feedback-chapter">'+fb.chapterTitle+'</div><div class="feedback-date">Graded '+date+'</div></div><div class="grade-badge">📊 Grade: '+fb.grade+'</div><div class="feedback-comment">"'+fb.comment+'"</div>';
+      container.appendChild(el);
+    });
+  } catch(e) {
+    container.innerHTML='<div class="feedback-empty"><div>📬</div>No feedback yet. Submit a chapter to your teacher to receive grades and comments.</div>';
   }
-
-  DEMO_FEEDBACK.forEach(fb => {
-    const date = new Date(fb.gradedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const el = document.createElement('div');
-    el.className = 'feedback-card';
-    el.innerHTML =
-      '<div class="feedback-header">' +
-      '<div class="feedback-chapter">' + fb.chapterTitle + ' — Lesson ' + fb.lessonNum + '</div>' +
-      '<div class="feedback-date">Graded ' + date + '</div>' +
-      '</div>' +
-      '<div class="grade-badge">📊 Grade: ' + fb.grade + '</div>' +
-      '<div class="feedback-comment">"' + fb.comment + '"</div>';
-    container.appendChild(el);
-  });
 }
 
-// ===== CLASS TAB =====
 function renderClassTab() {
-  const container = document.getElementById('class-info');
-
-  if (!currentStudent.classCode) {
-    container.innerHTML =
-      '<div class="no-class-box"><div>🏫</div>' +
-      '<p>You are not enrolled in a class yet.</p>' +
-      '<button class="btn-login" style="margin-top:12px;width:auto;padding:10px 24px;" onclick="promptJoinClass()">+ Join a Class</button>' +
-      '</div>';
+  const container=document.getElementById('class-info');
+  if(!currentStudent.classCode){
+    container.innerHTML='<div class="no-class-box"><div>🏫</div><p>You are not enrolled in a class yet.</p><button class="btn-login" style="margin-top:12px;width:auto;padding:10px 24px;" onclick="promptJoinClass()">+ Join a Class</button></div>';
     return;
   }
-
-  const expiry = currentStudent.classExpiresAt
-    ? new Date(currentStudent.classExpiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'N/A';
-  const daysLeft = currentStudent.classExpiresAt
-    ? Math.max(0, Math.ceil((currentStudent.classExpiresAt - Date.now()) / (24 * 60 * 60 * 1000)))
-    : '—';
-
-  container.innerHTML =
-    '<div class="class-code-big">' + currentStudent.classCode + '</div>' +
-    '<div class="class-info-row"><span class="class-info-label">Teacher</span><span class="class-info-val">' + (currentStudent.teacherName || 'Your Teacher') + '</span></div>' +
-    '<div class="class-info-row"><span class="class-info-label">Status</span><span class="class-info-val" style="color:#16a34a;">✅ Active</span></div>' +
-    '<div class="class-info-row"><span class="class-info-label">Class Expires</span><span class="class-info-val">' + expiry + '</span></div>' +
-    '<div class="class-info-row"><span class="class-info-label">Days Remaining</span><span class="class-info-val">' + daysLeft + ' days</span></div>' +
-    '<div class="class-info-row"><span class="class-info-label">Your Plan</span><span class="class-info-val">Student Access — $7 one time</span></div>';
+  const expiry=currentStudent.classExpiresAt?new Date(currentStudent.classExpiresAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'Active';
+  container.innerHTML='<div class="class-code-big">'+currentStudent.classCode+'</div><div class="class-info-row"><span class="class-info-label">Teacher</span><span class="class-info-val">'+(currentStudent.teacherName||'Your Teacher')+'</span></div><div class="class-info-row"><span class="class-info-label">Status</span><span class="class-info-val" style="color:#16a34a;">✅ Active</span></div><div class="class-info-row"><span class="class-info-label">Class Expires</span><span class="class-info-val">'+expiry+'</span></div><div class="class-info-row"><span class="class-info-label">Your Plan</span><span class="class-info-val">Student Access — $7 one time</span></div>';
 }
 
-function promptJoinClass() {
-  const code = prompt('Enter your class code from your teacher:');
-  if (code && code.trim().length > 4) {
-    currentStudent.classCode = code.trim().toUpperCase();
-    localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-    renderClassTab();
-    renderSubmissionsTab();
-    updateWelcomeStats();
-    alert('✅ Joined class: ' + currentStudent.classCode);
-  }
+async function promptJoinClass() {
+  const code=prompt('Enter your class code from your teacher (e.g. DTWD-ABC123):');
+  if(!code||code.trim().length<6)return;
+  const c=code.trim().toUpperCase();
+  try{
+    if(currentStudent.uid)await db.collection('users').doc(currentStudent.uid).update({classCode:c});
+    currentStudent.classCode=c;
+    localStorage.setItem('dtwd_student',JSON.stringify(currentStudent));
+    alert('✅ Joined class: '+c);
+    renderClassTab();renderSubmissionsTab();
+  }catch(e){alert('Error: '+e.message);}
 }
 
-// ===== NAVIGATION =====
-function goToApp() { window.location.href = 'index.html'; }
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('tab-content-' + tab).classList.add('active');
+function goToApp(){window.location.href='index.html';}
+function logout(){auth.signOut().then(()=>{localStorage.removeItem('dtwd_student');window.location.href='auth.html';});}
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-content-'+tab).classList.add('active');
+  if(tab==='feedback')renderFeedbackTab();
 }
-
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
