@@ -18,12 +18,11 @@ window.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(s);
   }
 
-  // Safety timeout — if auth never fires, show error instead of spinning forever
+  // ── FIX: Increase timeout to 15s and don't show hard error — try localStorage first ──
   const authTimeout = setTimeout(() => {
-    console.error('Auth timeout after 8s');
-    showLoading(false);
-    showErrorPage('Loading timed out. Please refresh the page or check your internet connection.');
-  }, 8000);
+    console.warn('Auth timeout after 15s — trying localStorage fallback');
+    tryLocalStorageFallback();
+  }, 15000);
 
   auth.onAuthStateChanged(async user => {
     clearTimeout(authTimeout);
@@ -49,25 +48,27 @@ window.addEventListener('DOMContentLoaded', () => {
               '&name=' + encodeURIComponent(parsed.name || '');
             return;
           }
+          // ── FIX: status 'active' — show dashboard immediately from localStorage ──
           currentTeacher = parsed;
           currentTeacher.uid = user.uid;
           currentTeacher.email = user.email;
           showLoading(false);
           await showDashboard();
-          updateFromFirestore(user.uid); // background sync
+          updateFromFirestore(user.uid); // background sync — non-blocking
           return;
         }
       } catch(e) { console.warn('localStorage parse error:', e); }
     }
 
-    // ─── STEP 2: Try Firestore with 5s timeout ───
+    // ─── STEP 2: No localStorage — try Firestore ───
     try {
       const snap = await Promise.race([
         db.collection('users').doc(user.uid).get(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 8000))
       ]);
 
       if (!snap.exists) {
+        // New user hitting dashboard directly — create a session and show
         currentTeacher = {
           uid:user.uid, name:user.displayName||user.email.split('@')[0], email:user.email,
           classCode:genCode(), plan:'medium', maxStudents:30, status:'active',
@@ -106,14 +107,15 @@ window.addEventListener('DOMContentLoaded', () => {
         status: data.status || 'active',
         expiresAt: data.expiresAt || (Date.now()+90*24*60*60*1000)
       };
-      if (!data.classCode) db.collection('users').doc(user.uid).update({classCode:currentTeacher.classCode}).catch(()=>{});
+      if (!data.classCode) db.collection('users').doc(user.uid).set({classCode:currentTeacher.classCode},{merge:true}).catch(()=>{});
       localStorage.setItem('dtwd_teacher', JSON.stringify(currentTeacher));
       showLoading(false);
       await showDashboard();
 
     } catch(fsErr) {
       console.warn('Firestore error/timeout:', fsErr.message);
-      // Create session from auth info and proceed
+      // ── FIX: Create minimal session instead of showing error page ──
+      // The teacher is authenticated — give them a working session
       currentTeacher = {
         uid:user.uid, name:user.displayName||user.email.split('@')[0], email:user.email,
         classCode:genCode(), plan:'medium', maxStudents:30, status:'active',
@@ -125,6 +127,26 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ── FIX: Fallback when auth never fires (rare edge case on slow connections) ──
+function tryLocalStorageFallback() {
+  const savedTeacher = localStorage.getItem('dtwd_teacher');
+  if (savedTeacher) {
+    try {
+      const parsed = JSON.parse(savedTeacher);
+      if (parsed.status === 'active' && parsed.name) {
+        console.log('Using localStorage fallback for teacher:', parsed.email);
+        currentTeacher = parsed;
+        showLoading(false);
+        showDashboard();
+        return;
+      }
+    } catch(e) {}
+  }
+  // No usable localStorage — show error
+  showLoading(false);
+  showErrorPage('Loading timed out. Please refresh the page or check your internet connection.');
+}
 
 async function updateFromFirestore(uid) {
   try {
