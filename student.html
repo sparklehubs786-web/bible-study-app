@@ -5,11 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Student Dashboard — Destroying the Works of the Devil</title>
 <link rel="stylesheet" href="student.css"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 </head>
 <body>
 
 <!-- ===== LOGIN SCREEN ===== -->
-<div id="screen-login" class="screen active">
+<div id="screen-login" class="screen" style="display:none">
   <div class="login-bg">
     <div class="login-card">
       <div class="login-logo">🙏</div>
@@ -31,7 +35,7 @@
 </div>
 
 <!-- ===== SETUP SCREEN — Join a class ===== -->
-<div id="screen-setup" class="screen">
+<div id="screen-setup" class="screen" style="display:none">
   <div class="setup-bg">
     <div class="setup-card">
       <div class="setup-logo">📚</div>
@@ -59,7 +63,7 @@
 </div>
 
 <!-- ===== STUDENT DASHBOARD ===== -->
-<div id="screen-dashboard" class="screen">
+<div id="screen-dashboard" class="screen" style="display:none">
 
   <!-- TOP NAV -->
   <div class="student-nav">
