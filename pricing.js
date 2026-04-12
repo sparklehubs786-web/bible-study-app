@@ -226,15 +226,31 @@ async function processPayment() {
 }
 
 async function activateAccount(name, email) {
-  // Activate pending signup if exists
+  // Activate pending signup
   const pending = localStorage.getItem('dtwd_pending_signup');
   if (pending) {
-    const user = JSON.parse(pending);
-    user.status = 'active';
-    const accounts = JSON.parse(localStorage.getItem('dtwd_accounts') || '[]');
-    if (!accounts.find(a => a.email === user.email)) accounts.push(user);
-    localStorage.setItem('dtwd_accounts', JSON.stringify(accounts));
-    localStorage.removeItem('dtwd_pending_signup');
+    try {
+      const user = JSON.parse(pending);
+      user.status = 'active';
+      // Update Firestore if we have uid
+      if (user.uid && typeof db !== 'undefined') {
+        try {
+          await db.collection('users').doc(user.uid).update({ status: 'active' });
+          console.log('Firestore status updated to active for:', user.uid);
+        } catch(e) { console.warn('Firestore update error:', e.message); }
+      }
+      // Update localStorage session
+      if (user.role === 'teacher') {
+        const existing = JSON.parse(localStorage.getItem('dtwd_teacher') || '{}');
+        existing.status = 'active';
+        localStorage.setItem('dtwd_teacher', JSON.stringify(existing));
+      } else {
+        const existing = JSON.parse(localStorage.getItem('dtwd_student') || '{}');
+        existing.status = 'active';
+        localStorage.setItem('dtwd_student', JSON.stringify(existing));
+      }
+      localStorage.removeItem('dtwd_pending_signup');
+    } catch(e) { console.warn('Activate account error:', e); }
   }
 
   closeCheckout();
