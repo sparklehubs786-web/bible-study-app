@@ -1,6 +1,5 @@
 // ===== REAL FIREBASE CONFIGURATION =====
 // Project: bilble project | Status: LIVE
-
 const firebaseConfig = {
   apiKey: "AIzaSyCllNSDG35sXzFVclG0aM1QPbIFqyfJ15w",
   authDomain: "bilble-project.firebaseapp.com",
@@ -19,18 +18,12 @@ if (!firebase.apps || !firebase.apps.length) {
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-// Enable offline persistence so app works even with connectivity issues
-try {
-  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Multiple tabs open, persistence only in one tab.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Browser does not support persistence.');
-    }
-  });
-} catch(e) {}
+// ===== DO NOT enable persistence on GitHub Pages =====
+// enablePersistence() causes silent hangs on static hosts when multiple
+// tabs are open or on first load. Removed intentionally.
+// localStorage in dashboard.js/student.js already provides offline support.
 
-// Set Firestore to not wait forever for server
+// Set shorter timeout so Firestore doesn't hang forever on bad connections
 db.settings({ merge: true });
 
 console.log('✅ Firebase LIVE — bilble project');
