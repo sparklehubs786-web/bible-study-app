@@ -104,15 +104,15 @@ async function processPayment(){
   }
 }
 
-// ===== ACTIVATE ACCOUNT =====
-// This is the single source of truth for marking a user as paid.
-// It MUST set status:'active' everywhere before redirecting.
+// ===== ACTIVATE ACCOUNT — FIXED =====
+// Uses set({merge:true}) instead of update() so it works even if doc doesn't exist yet.
+// Writes status:'active' to BOTH Firestore and localStorage before redirecting.
 async function activateAccount(name, email) {
   const isTeacher = currentPlan && currentPlan.type==='teacher';
   let classCode = null;
   let uid = null;
 
-  // Get uid from pending signup or from Firebase auth
+  // Get uid from pending signup or from current Firebase auth user
   const pendingRaw = localStorage.getItem('dtwd_pending_signup');
   let pending = null;
   if (pendingRaw) { try { pending=JSON.parse(pendingRaw); } catch(e){} }
@@ -120,6 +120,19 @@ async function activateAccount(name, email) {
   uid = (pending && pending.uid) || null;
   if (!uid) {
     try { const u=auth.currentUser; if(u) uid=u.uid; } catch(e){}
+  }
+
+  // ── FIX: Also try to get uid from saved localStorage profile ──
+  if (!uid) {
+    try {
+      if (isTeacher) {
+        const t = JSON.parse(localStorage.getItem('dtwd_teacher')||'{}');
+        uid = t.uid || null;
+      } else {
+        const s = JSON.parse(localStorage.getItem('dtwd_student')||'{}');
+        uid = s.uid || null;
+      }
+    } catch(e){}
   }
 
   // Get existing class code
@@ -132,18 +145,9 @@ async function activateAccount(name, email) {
     if (!classCode) classCode = generateClassCode();
   }
 
-  // ─── 1. Update Firestore to status:'active' ───
-  if (uid) {
-    try {
-      const updatePayload = { status:'active' };
-      if (isTeacher && classCode) updatePayload.classCode = classCode;
-      await db.collection('users').doc(uid).update(updatePayload);
-      console.log('✅ Firestore status set to active for uid:', uid);
-    } catch(e) { console.warn('Firestore update error (non-fatal):', e.message); }
-  }
+  const expiresAt = Date.now() + (90*24*60*60*1000);
 
-  // ─── 2. Update localStorage to status:'active' ───
-  // This is the MOST IMPORTANT part — student.js reads from localStorage first.
+  // ── STEP 1: Update localStorage FIRST (instant, no network) ──
   if (isTeacher) {
     const existing = JSON.parse(localStorage.getItem('dtwd_teacher') || '{}');
     const updated = {
@@ -153,11 +157,11 @@ async function activateAccount(name, email) {
       classCode:   classCode,
       plan:        currentPlan.planKey || existing.plan || 'medium',
       maxStudents: currentPlan.maxStudents || 30,
-      status:      'active',   // ← KEY: mark as paid
-      expiresAt:   Date.now() + (90*24*60*60*1000)
+      status:      'active',   // ← KEY
+      expiresAt:   expiresAt
     };
     localStorage.setItem('dtwd_teacher', JSON.stringify(updated));
-    console.log('✅ localStorage dtwd_teacher status set to active');
+    console.log('✅ localStorage dtwd_teacher → active');
   } else {
     const existing = JSON.parse(localStorage.getItem('dtwd_student') || '{}');
     const updated = {
@@ -167,21 +171,44 @@ async function activateAccount(name, email) {
       classCode:   existing.classCode   || null,
       teacherName: existing.teacherName || null,
       plan:        'student',
-      status:      'active',   // ← KEY: mark as paid
+      status:      'active',   // ← KEY
       purchasedAt: Date.now()
     };
     localStorage.setItem('dtwd_student', JSON.stringify(updated));
-    console.log('✅ localStorage dtwd_student status set to active');
+    console.log('✅ localStorage dtwd_student → active');
   }
 
-  // ─── 3. Remove the pending signup flag ───
-  // This ensures the payment gate is never triggered again.
+  // ── STEP 2: Remove pending flag ──
   localStorage.removeItem('dtwd_pending_signup');
-  console.log('✅ dtwd_pending_signup removed');
+  console.log('✅ Removed dtwd_pending_signup');
+
+  // ── STEP 3: Update Firestore (use set+merge so it works even if doc missing) ──
+  if (uid) {
+    try {
+      const updatePayload = { status: 'active', name };
+      if (isTeacher) {
+        updatePayload.classCode   = classCode;
+        updatePayload.plan        = currentPlan.planKey;
+        updatePayload.maxStudents = currentPlan.maxStudents;
+        updatePayload.expiresAt   = expiresAt;
+        updatePayload.role        = 'teacher';
+      } else {
+        updatePayload.role        = 'student';
+        updatePayload.purchasedAt = Date.now();
+      }
+      // ── FIX: use set({merge:true}) instead of update() ──
+      // update() throws if document doesn't exist; set+merge works either way
+      await db.collection('users').doc(uid).set(updatePayload, { merge: true });
+      console.log('✅ Firestore → active for uid:', uid);
+    } catch(e) {
+      // Non-fatal — localStorage already has status:active
+      console.warn('Firestore update error (non-fatal):', e.message);
+    }
+  }
 
   closeCheckout();
 
-  // ─── 4. Show success message ───
+  // ── STEP 4: Show success message ──
   let successMsg = '';
   if (isTeacher) {
     successMsg = 'Welcome ' + name + '! Your teacher account is now active.<br><br>Your class code is:<br><strong style="font-size:1.5rem;color:#5b21b6;letter-spacing:3px;">' + classCode + '</strong><br><br>Share this code with your students. Redirecting to dashboard... 🙏';
