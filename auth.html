@@ -402,7 +402,9 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('btn-google').disabled=true;
 
   // STEP 1: Check if we're returning from Google redirect
+  sessionStorage.setItem('handling_redirect','1');
   const handled=await checkGoogleRedirect();
+  sessionStorage.removeItem('handling_redirect');
   if(handled)return; // We're redirecting, stop here
 
   // STEP 2: Re-enable buttons
@@ -416,14 +418,26 @@ window.addEventListener('DOMContentLoaded',async()=>{
   else if(p.get('signup')==='1')setMode('signup');
 
   // STEP 4: If already verified and logged in, redirect
+  // Only redirect if we're NOT in the middle of a Google redirect (handled above)
   auth.onAuthStateChanged(async u=>{
     if(u&&u.emailVerified){
+      // Check if this is right after Google redirect - already handled above
+      if(sessionStorage.getItem('handling_redirect')){
+        sessionStorage.removeItem('handling_redirect');
+        return;
+      }
       let userRole='student';
       try{
         const doc=await db.collection('users').doc(u.uid).get();
         if(doc.exists){userRole=doc.data().role||'student';saveSessionFromData(doc.data(),u);}
+        else {
+          // No Firestore profile but user is logged in — check localStorage
+          const t=localStorage.getItem('dtwd_teacher');
+          const s=localStorage.getItem('dtwd_student');
+          if(t){const td=JSON.parse(t);td.uid=u.uid;localStorage.setItem('dtwd_teacher',JSON.stringify(td));userRole='teacher';}
+          else if(s){const sd=JSON.parse(s);sd.uid=u.uid;localStorage.setItem('dtwd_student',JSON.stringify(sd));}
+        }
       }catch(e){
-        // Use localStorage fallback
         const t=localStorage.getItem('dtwd_teacher');
         if(t)userRole='teacher';
       }
