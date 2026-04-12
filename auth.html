@@ -94,7 +94,8 @@ h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bot
     <div class="pinfo" id="pinfo"></div>
   </div>
 
-  <button class="btn bgo" id="btn-google" onclick="googleAuth()">
+  <!-- *** CHANGED: popup-based Google button *** -->
+  <button class="btn bgo" id="btn-google" onclick="googleAuthPopup()">
     <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G"/>
     <span id="glbl">Continue with Google</span>
   </button>
@@ -236,27 +237,16 @@ async function doLogin(email, pass) {
   try {
     cred = await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
-    // auth/invalid-login-credentials often means email not verified OR wrong password
-    if (e.code==='auth/invalid-login-credentials' || e.code==='auth/wrong-password' || e.code==='auth/user-not-found') {
-      // Check if user exists and has unverified email
-      try {
-        const methods = await auth.fetchSignInMethodsForEmail(email);
-        if (methods.length === 0) {
-          throw { code: 'auth/user-not-found' };
-        }
-      } catch(e2) {}
-    }
     throw e;
   }
 
   const u = cred.user;
 
-  // ===== EMAIL NOT VERIFIED =====
+  // EMAIL NOT VERIFIED
   if (!u.emailVerified) {
     await auth.signOut();
     setBusy(false);
-    showMsg('📧 Your email is not verified yet.\n\nPlease check your <strong>inbox AND spam/junk folder</strong> for a verification email from Firebase.\n\nClick the link in that email, then come back here to sign in.', 'info');
-    // Add resend button
+    showMsg('📧 Your email is not verified yet.\n\nPlease check your <strong>inbox AND spam/junk folder</strong> for a verification email.\n\nClick the link in that email, then come back here to sign in.', 'info');
     setTimeout(() => {
       const msgEl = document.getElementById('msg');
       const btn = document.createElement('button');
@@ -269,8 +259,9 @@ async function doLogin(email, pass) {
     return;
   }
 
-  // ===== GET PROFILE =====
+  // GET PROFILE
   let userRole = 'student';
+  let userStatus = 'active';
   let profile = null;
 
   try {
@@ -278,24 +269,35 @@ async function doLogin(email, pass) {
     if (doc.exists) {
       profile = doc.data();
       userRole = profile.role || 'student';
+      userStatus = profile.status || 'active';
     } else {
-      // No profile — create one
       profile = { uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student', plan:'student', status:'active', createdAt:Date.now() };
       try { await db.collection('users').doc(u.uid).set(profile); } catch(e2){}
     }
   } catch(fsErr) {
     console.warn('Firestore unavailable:', fsErr.message);
-    // Use localStorage
     const savedT = localStorage.getItem('dtwd_teacher');
     const savedS = localStorage.getItem('dtwd_student');
-    if (savedT) { const t=JSON.parse(savedT); if(t.email===email){userRole='teacher';profile=t;} }
-    else if (savedS) { const s=JSON.parse(savedS); if(s.email===email){userRole='student';profile=s;} }
+    if (savedT) { try { const t=JSON.parse(savedT); if(t.email===email){userRole='teacher';profile=t;userStatus=t.status||'active';} } catch(e){} }
+    else if (savedS) { try { const s=JSON.parse(savedS); if(s.email===email){userRole='student';profile=s;userStatus=s.status||'active';} } catch(e){} }
     if (!profile) {
-      profile = { uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student' };
+      profile = { uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student', status:'active' };
     }
   }
 
   saveSession({ ...profile, uid:u.uid });
+
+  // PAYMENT GATE: check if user has paid
+  if (userStatus === 'pending_payment') {
+    setBusy(false);
+    const planParam = userRole === 'teacher' ? (profile.plan || 'medium') : 'student';
+    showMsg('💳 Please complete your payment to access your dashboard.', 'warn');
+    setTimeout(() => {
+      window.location.href = 'pricing.html?plan=' + planParam + '&email=' + encodeURIComponent(email) + '&name=' + encodeURIComponent(profile.name || '');
+    }, 1500);
+    return;
+  }
+
   redirect(userRole);
 }
 
@@ -315,8 +317,7 @@ async function resendVerify(email, pass) {
 async function doSignup(email, pass, name) {
   const pv = document.getElementById('plan').value;
 
-  // ===== TEACHER SIGNUP =====
-  // Create Firebase account AND send verification, then go to payment
+  // TEACHER SIGNUP
   if (role === 'teacher') {
     let teacherUid = null;
     try {
@@ -326,26 +327,33 @@ async function doSignup(email, pass, name) {
       try { await u.updateProfile({ displayName: name }); } catch(e2){}
       try { await u.sendEmailVerification(); } catch(e2){ console.warn('Verify email error:', e2); }
 
-      // Save teacher profile to Firestore
       const classCode = genCode();
       const profile = {
         uid: teacherUid, name, email,
         role: 'teacher', plan: pv,
         classCode,
         maxStudents: PL[pv]?.max || 30,
-        teacherName: null,
+        teacherName: name,
         createdAt: Date.now(),
         status: 'pending_payment',
         expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
       };
       try { await db.collection('users').doc(teacherUid).set(profile); } catch(e2){ console.warn('Firestore:', e2); }
+
+      // Save to localStorage for later
+      localStorage.setItem('dtwd_teacher', JSON.stringify({
+        uid: teacherUid, name, email,
+        classCode, plan: pv,
+        maxStudents: PL[pv]?.max || 30,
+        status: 'pending_payment',
+        expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
+      }));
+      localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, name, role:'teacher', plan:pv, uid:teacherUid, status:'pending_payment' }));
+
       await auth.signOut();
-
       setBusy(false);
-      showMsg('✅ Teacher account created! A verification email was sent to <strong>'+email+'</strong>.\n\nCheck inbox AND spam folder. After verifying, complete payment to activate your teacher dashboard.', 'ok');
-      localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, pass, name, role:'teacher', plan:pv, uid:teacherUid }));
+      showMsg('✅ Teacher account created! A verification email was sent to <strong>'+email+'</strong>.<br><br>Check inbox AND spam folder. After verifying, complete payment to activate your dashboard.', 'ok');
 
-      // Go to payment after 3 seconds
       setTimeout(() => {
         window.location.href = 'pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name);
       }, 3000);
@@ -355,7 +363,7 @@ async function doSignup(email, pass, name) {
     return;
   }
 
-  // ===== STUDENT SIGNUP =====
+  // STUDENT SIGNUP
   const cred = await auth.createUserWithEmailAndPassword(email, pass);
   const u = cred.user;
   try { await u.updateProfile({ displayName: name }); } catch(e2){}
@@ -363,117 +371,126 @@ async function doSignup(email, pass, name) {
 
   const profile = { uid:u.uid, name, email, role:'student', plan:'student', classCode:null, teacherName:null, createdAt:Date.now(), status:'pending_payment' };
   try { await db.collection('users').doc(u.uid).set(profile); } catch(e2){ console.warn('Firestore:', e2); }
+
+  localStorage.setItem('dtwd_student', JSON.stringify({ uid:u.uid, name, email, classCode:null, teacherName:null, plan:'student', status:'pending_payment' }));
+  localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, name, role:'student', uid:u.uid, status:'pending_payment' }));
+
   await auth.signOut();
-
   setBusy(false);
-  showMsg('✅ Account created! A verification email was sent to <strong>'+email+'</strong>.\n\nCheck inbox AND spam folder. After verifying your email, come back here to sign in.', 'ok');
-  localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, pass, name, role:'student', uid:u.uid }));
+  showMsg('✅ Account created! A verification email was sent to <strong>'+email+'</strong>.<br><br>Check inbox AND spam folder. After verifying your email, come back here to sign in and complete payment.', 'ok');
 
-  // Auto-switch to login after 3 seconds
   setTimeout(() => {
     setMode('login');
     document.getElementById('fe').value = email;
-    showMsg('✅ Account ready! Enter your password to sign in after verifying your email.', 'ok');
+    showMsg('✅ Account ready! Sign in after verifying your email, then complete the $7 payment.', 'ok');
   }, 3500);
 }
 
-// ===== GOOGLE AUTH =====
-async function googleAuth() {
+// ===== GOOGLE AUTH — POPUP (works on GitHub Pages) =====
+async function googleAuthPopup() {
   if (busy) return;
   setBusy(true, 'Connecting to Google...');
   clrMsg();
-  try {
-    // Save role and plan before redirect
-    localStorage.setItem('dtwd_gauth_role', role);
-    localStorage.setItem('dtwd_gauth_plan', role==='teacher' ? (document.getElementById('plan').value||'medium') : 'student');
-    localStorage.setItem('dtwd_gauth_mode', mode);
-    if (role==='teacher' && mode==='signup') {
-      const pv = document.getElementById('plan').value;
-      if (!pv) { showMsg('Please select a teacher plan first.','err'); setBusy(false); return; }
+
+  if (mode === 'signup' && role === 'teacher') {
+    const pv = document.getElementById('plan').value;
+    if (!pv) {
+      showMsg('Please select a teacher plan first.', 'err');
+      setBusy(false);
+      return;
     }
+  }
+
+  try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    await auth.signInWithRedirect(provider);
-    // Browser navigates away — result handled on return
-  } catch(e) {
-    showMsg(nice(e.code||e.message), 'err');
-    setBusy(false);
-  }
-}
 
-// ===== HANDLE GOOGLE REDIRECT RESULT =====
-async function handleGoogleRedirect() {
-  try {
-    const result = await auth.getRedirectResult();
-    if (!result || !result.user) return false; // No redirect in progress
-
+    // Use POPUP instead of redirect — works reliably on GitHub Pages
+    const result = await auth.signInWithPopup(provider);
     const u = result.user;
-    console.log('Google redirect result received for:', u.email);
 
-    const savedRole = localStorage.getItem('dtwd_gauth_role') || 'student';
-    const savedPlan = localStorage.getItem('dtwd_gauth_plan') || 'student';
-    const savedMode = localStorage.getItem('dtwd_gauth_mode') || 'login';
-    localStorage.removeItem('dtwd_gauth_role');
-    localStorage.removeItem('dtwd_gauth_plan');
-    localStorage.removeItem('dtwd_gauth_mode');
+    console.log('Google popup success:', u.email);
 
-    // Try to get existing Firestore profile
+    const savedRole = role;
+    const savedPlan = role === 'teacher' ? (document.getElementById('plan').value || 'medium') : 'student';
+
+    // Check if user profile exists in Firestore
     let profile = null;
     let isNew = false;
     try {
       const doc = await db.collection('users').doc(u.uid).get();
       if (doc.exists) {
         profile = doc.data();
-        console.log('Existing profile found, role:', profile.role);
       } else {
         isNew = true;
       }
     } catch(fsErr) {
-      console.warn('Firestore error during Google auth:', fsErr.message);
+      console.warn('Firestore error:', fsErr.message);
       // Check localStorage
       const savedT = localStorage.getItem('dtwd_teacher');
       const savedS = localStorage.getItem('dtwd_student');
-      if (savedT) { const t=JSON.parse(savedT); if(t.email===u.email){profile=t;profile.role='teacher';} }
-      else if (savedS) { const s=JSON.parse(savedS); if(s.email===u.email){profile=s;profile.role='student';} }
+      if (savedT) { try { const t=JSON.parse(savedT); if(t.email===u.email){profile=t;} } catch(e){} }
+      else if (savedS) { try { const s=JSON.parse(savedS); if(s.email===u.email){profile=s;} } catch(e){} }
     }
 
     if (!profile || isNew) {
-      // New Google user — create profile based on saved role
-      const classCode = savedRole==='teacher' ? genCode() : null;
-      profile = {
+      // New Google user — create profile
+      const classCode = savedRole === 'teacher' ? genCode() : null;
+      const newProfile = {
         uid: u.uid,
         name: u.displayName || u.email.split('@')[0],
         email: u.email,
         role: savedRole,
         plan: savedPlan,
         classCode,
-        teacherName: null,
+        teacherName: savedRole === 'teacher' ? (u.displayName || '') : null,
         createdAt: Date.now(),
-        status: savedMode==='signup' ? 'pending_payment' : 'active'
+        status: mode === 'signup' ? 'pending_payment' : 'active',
+        maxStudents: PL[savedPlan]?.max || 30,
+        expiresAt: Date.now() + (90*24*60*60*1000)
       };
-      try { await db.collection('users').doc(u.uid).set(profile); } catch(e2){ console.warn(e2); }
+      try { await db.collection('users').doc(u.uid).set(newProfile); } catch(e2){ console.warn(e2); }
+      profile = newProfile;
 
-      // New user on signup — go to payment
-      if (savedMode==='signup') {
+      if (mode === 'signup') {
         saveSession({ ...profile, uid:u.uid });
         localStorage.setItem('dtwd_pending_signup', JSON.stringify(profile));
-        const planParam = savedRole==='teacher' ? savedPlan : 'student';
+        const planParam = savedRole === 'teacher' ? savedPlan : 'student';
+        setBusy(false);
         window.location.href = 'pricing.html?plan='+planParam+'&email='+encodeURIComponent(u.email)+'&name='+encodeURIComponent(u.displayName||'');
-        return true;
+        return;
       }
     }
 
+    // Existing user — check payment status
+    const userRole = profile.role || savedRole;
+    const userStatus = profile.status || 'active';
+
     saveSession({ ...profile, uid:u.uid });
-    redirect(profile.role || savedRole);
-    return true;
+
+    if (userStatus === 'pending_payment') {
+      setBusy(false);
+      const planParam = userRole === 'teacher' ? (profile.plan || 'medium') : 'student';
+      showMsg('💳 Please complete your payment to access your dashboard.', 'warn');
+      setTimeout(() => {
+        window.location.href = 'pricing.html?plan='+planParam+'&email='+encodeURIComponent(u.email)+'&name='+encodeURIComponent(u.displayName||'');
+      }, 1500);
+      return;
+    }
+
+    redirect(userRole);
 
   } catch(e) {
-    if (e.code === 'auth/no-auth-event') return false;
-    console.error('Google redirect error:', e);
-    showMsg(nice(e.code||e.message), 'err');
+    console.error('Google popup error:', e);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      showMsg('Sign-in was cancelled. Please try again.', 'warn');
+    } else if (e.code === 'auth/popup-blocked') {
+      showMsg('Popup was blocked by your browser. Please allow popups for this site and try again.', 'err');
+    } else {
+      showMsg(nice(e.code||e.message), 'err');
+    }
     setBusy(false);
-    return false;
   }
 }
 
@@ -491,25 +508,34 @@ async function forgotPwd() {
 
 // ===== SAVE SESSION =====
 function saveSession(d) {
-  if (d.role==='teacher') {
+  if (d.role === 'teacher') {
     localStorage.setItem('dtwd_teacher', JSON.stringify({
-      uid:d.uid||'', name:d.name||'', email:d.email||'',
-      classCode:d.classCode||genCode(), plan:d.plan||'medium',
-      maxStudents:{small:15,medium:30,large:60,xl:100}[d.plan]||30,
-      expiresAt:d.expiresAt||(Date.now()+90*24*60*60*1000)
+      uid: d.uid||'',
+      name: d.name||'',
+      email: d.email||'',
+      classCode: d.classCode || genCode(),
+      plan: d.plan||'medium',
+      maxStudents: {small:15,medium:30,large:60,xl:100}[d.plan] || d.maxStudents || 30,
+      status: d.status || 'active',
+      expiresAt: d.expiresAt || (Date.now()+90*24*60*60*1000)
     }));
   } else {
     localStorage.setItem('dtwd_student', JSON.stringify({
-      uid:d.uid||'', name:d.name||'', email:d.email||'',
-      classCode:d.classCode||null, teacherName:d.teacherName||null,
-      plan:'student', purchasedAt:d.purchasedAt||Date.now()
+      uid: d.uid||'',
+      name: d.name||'',
+      email: d.email||'',
+      classCode: d.classCode||null,
+      teacherName: d.teacherName||null,
+      plan: 'student',
+      status: d.status || 'active',
+      purchasedAt: d.purchasedAt||Date.now()
     }));
   }
 }
 
 function redirect(r) {
-  console.log('Redirecting to:', r==='teacher' ? 'dashboard.html' : 'student.html');
-  window.location.replace(r==='teacher' ? 'dashboard.html' : 'student.html');
+  console.log('Redirecting role:', r);
+  window.location.replace(r === 'teacher' ? 'dashboard.html' : 'student.html');
 }
 
 function genCode() {
@@ -528,18 +554,17 @@ function clrMsg() { document.getElementById('msg').style.display='none'; }
 
 function nice(c) {
   const m = {
-    'auth/user-not-found':         'No account found with that email. Please create an account first.',
-    'auth/wrong-password':         'Incorrect password. Please try again or use Forgot Password.',
-    'auth/invalid-credential':     'Email or password is incorrect. Please check and try again.',
+    'auth/user-not-found':          'No account found with that email. Please create an account first.',
+    'auth/wrong-password':          'Incorrect password. Please try again or use Forgot Password.',
+    'auth/invalid-credential':      'Email or password is incorrect. Please check and try again.',
     'auth/invalid-login-credentials':'Email or password is incorrect. Please check your email is verified and try again.',
-    'auth/email-already-in-use':   'An account with this email already exists. Please sign in instead.',
-    'auth/invalid-email':          'Please enter a valid email address.',
-    'auth/weak-password':          'Password must be at least 6 characters.',
-    'auth/too-many-requests':      'Too many attempts. Please wait a few minutes and try again.',
-    'auth/popup-closed-by-user':   'Sign-in was cancelled. Please try again.',
-    'auth/network-request-failed': 'Network error. Please check your internet connection.',
-    'auth/cancelled-popup-request':'Please try again.',
-    'auth/no-auth-event':          null,
+    'auth/email-already-in-use':    'An account with this email already exists. Please sign in instead.',
+    'auth/invalid-email':           'Please enter a valid email address.',
+    'auth/weak-password':           'Password must be at least 6 characters.',
+    'auth/too-many-requests':       'Too many attempts. Please wait a few minutes and try again.',
+    'auth/popup-closed-by-user':    'Sign-in was cancelled. Please try again.',
+    'auth/network-request-failed':  'Network error. Please check your internet connection.',
+    'auth/cancelled-popup-request': 'Please try again.',
   };
   if (c && m[c] !== undefined) return m[c] || '';
   return 'Error: '+c+'. Please try again.';
@@ -549,42 +574,34 @@ function nice(c) {
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('Auth page loading...');
 
-  // Disable buttons while checking
-  document.getElementById('bsub').disabled = true;
-  document.getElementById('btn-google').disabled = true;
-  document.getElementById('bsub').innerHTML = '<span class="spin"></span>Loading...';
-
-  // STEP 1: Handle Google redirect result (MUST be first)
-  const googleHandled = await handleGoogleRedirect();
-  if (googleHandled) return; // Already redirecting
-
-  // STEP 2: Re-enable buttons
-  document.getElementById('bsub').disabled = false;
-  document.getElementById('btn-google').disabled = false;
-  document.getElementById('bsub').textContent = 'Sign In';
-  busy = false;
-
-  // STEP 3: Check URL params
+  // Check URL params
   const params = new URLSearchParams(window.location.search);
-  if (params.get('role')==='teacher') { setMode('signup'); setRole('teacher'); }
-  else if (params.get('signup')==='1') setMode('signup');
+  if (params.get('role') === 'teacher') { setMode('signup'); setRole('teacher'); }
+  else if (params.get('signup') === '1') setMode('signup');
 
-  // STEP 4: Check if already logged in
+  // Check if already logged in and paid
   auth.onAuthStateChanged(async u => {
     if (u && u.emailVerified) {
       console.log('User already logged in:', u.email);
       let userRole = 'student';
+      let userStatus = 'active';
       try {
         const doc = await db.collection('users').doc(u.uid).get();
         if (doc.exists) {
-          userRole = doc.data().role || 'student';
-          saveSession({ ...doc.data(), uid:u.uid });
+          const data = doc.data();
+          userRole = data.role || 'student';
+          userStatus = data.status || 'active';
+          saveSession({ ...data, uid:u.uid });
         }
       } catch(e) {
         const savedT = localStorage.getItem('dtwd_teacher');
-        if (savedT) userRole = 'teacher';
+        if (savedT) { try { const t=JSON.parse(savedT); userRole='teacher'; userStatus=t.status||'active'; } catch(e2){} }
       }
-      redirect(userRole);
+
+      // If paid, go to dashboard. If pending, stay on auth page so they can pay.
+      if (userStatus !== 'pending_payment') {
+        redirect(userRole);
+      }
     }
   });
 });
