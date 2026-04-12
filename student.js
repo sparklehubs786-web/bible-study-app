@@ -88,7 +88,15 @@ async function resendVerify() {
 }
 
 function showDashboard() {
-  document.getElementById('screen-dashboard').classList.add('active');
+  // Hide ALL other screens first
+  document.querySelectorAll('.screen').forEach(s => {
+    s.style.display = 'none';
+    s.classList.remove('active');
+  });
+  // Show ONLY dashboard
+  const dash = document.getElementById('screen-dashboard');
+  dash.style.display = 'block';
+  dash.classList.add('active');
   document.getElementById('student-name-badge').textContent = '👤 ' + currentStudent.name;
   document.getElementById('welcome-name').textContent  = 'Welcome, ' + currentStudent.name + '! 🙏';
   document.getElementById('welcome-class').textContent = currentStudent.classCode ? '📚 Class: '+currentStudent.classCode+(currentStudent.teacherName?' — Teacher: '+currentStudent.teacherName:'') : '📖 No class yet — go to My Class tab to join one';
