@@ -1,219 +1,107 @@
 // ===== STUDENT DASHBOARD — REAL FIREBASE =====
-let currentStudent = null;
-let currentSubmitChapterId = null;
+let currentStudent=null,currentSubmitChapterId=null;
 
-// ===== HELPER: Check if student has paid =====
-// Returns true if user should be allowed into dashboard
-function hasPaid(studentData) {
-  // If status is explicitly active, they've paid
-  if (studentData && studentData.status === 'active') return true;
-  // If status is pending_payment, they haven't paid
-  if (studentData && studentData.status === 'pending_payment') return false;
-  // If no status field at all, assume they've paid (legacy accounts)
-  return true;
+function hasPaid(d){
+  if(!d)return false;
+  if(d.status==='active')return true;
+  if(d.status==='pending_payment')return false;
+  return true; // legacy accounts without status field — assume paid
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded',()=>{
   showLoading(true);
+  const authTimeout=setTimeout(()=>{showLoading(false);showError('Loading timed out. Please refresh the page.');},8000);
 
-  // Safety timeout
-  const authTimeout = setTimeout(() => {
-    console.error('Auth timeout after 8s');
-    showLoading(false);
-    showError('Loading timed out. Please refresh the page.');
-  }, 8000);
-
-  auth.onAuthStateChanged(async user => {
+  auth.onAuthStateChanged(async user=>{
     clearTimeout(authTimeout);
+    if(!user){showLoading(false);window.location.href='auth.html';return;}
+    if(!user.emailVerified){showLoading(false);showVerifyPrompt(user);return;}
 
-    if (!user) { showLoading(false); window.location.href = 'auth.html'; return; }
-    if (!user.emailVerified) { showLoading(false); showVerifyPrompt(user); return; }
-
-    // ─── PRIMARY: Try localStorage first (instant) ───
-    const saved = localStorage.getItem('dtwd_student');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Make sure this localStorage belongs to the current logged-in user
-        if (parsed.email === user.email || !parsed.email) {
-          parsed.uid = user.uid; // Always keep uid fresh
-
-          if (!hasPaid(parsed)) {
-            // Not paid — show payment gate
-            currentStudent = parsed;
-            showLoading(false);
-            showPaymentGate('student');
-            return;
+    // PRIMARY: localStorage first (instant)
+    const saved=localStorage.getItem('dtwd_student');
+    if(saved){
+      try{
+        const parsed=JSON.parse(saved);
+        if(parsed.email===user.email||!parsed.email){
+          parsed.uid=user.uid;
+          if(!hasPaid(parsed)){
+            currentStudent=parsed;showLoading(false);showPaymentGate();return;
           }
-
-          // Paid — show dashboard immediately
-          currentStudent = parsed;
-          currentStudent.uid = user.uid;
-          showLoading(false);
-          showDashboard();
-          // Then sync from Firestore in background
-          syncFromFirestore(user);
+          currentStudent=parsed;currentStudent.uid=user.uid;
+          showLoading(false);showDashboard();
+          syncFromFirestore(user); // background
           return;
         }
-      } catch(e) { console.warn('localStorage parse error:', e); }
+      }catch(e){console.warn('localStorage parse:',e);}
     }
-
-    // ─── SECONDARY: No localStorage — try Firestore ───
+    // SECONDARY: Firestore
     await syncFromFirestore(user);
   });
 });
 
-// Sync from Firestore and show dashboard (or payment gate)
-async function syncFromFirestore(user) {
-  try {
-    const doc = await Promise.race([
-      db.collection('users').doc(user.uid).get(),
-      new Promise((_,r) => setTimeout(() => r(new Error('Firestore timeout')), 5000))
-    ]);
-
-    if (doc.exists) {
-      const data = doc.data();
-
-      // Teacher logged into student page — redirect
-      if (data.role === 'teacher') {
-        window.location.href = 'dashboard.html';
-        return;
-      }
-
-      const student = {
-        uid:           user.uid,
-        name:          data.name || user.displayName || user.email.split('@')[0],
-        email:         user.email,
-        classCode:     data.classCode || null,
-        teacherName:   data.teacherName || null,
-        plan:          'student',
-        status:        data.status || 'active',
-        purchasedAt:   data.purchasedAt || Date.now(),
-        classExpiresAt: data.classExpiresAt || null
-      };
-
-      // Save to localStorage
-      localStorage.setItem('dtwd_student', JSON.stringify(student));
-
-      if (!hasPaid(student)) {
-        currentStudent = student;
-        showLoading(false);
-        showPaymentGate('student');
-        return;
-      }
-
-      currentStudent = student;
-
-      // If dashboard is already showing, just refresh it
-      const dash = document.getElementById('screen-dashboard');
-      if (dash && dash.classList.contains('active')) {
-        updateWelcomeStats();
-        renderClassTab();
-        return;
-      }
-
-      showLoading(false);
-      showDashboard();
-
-    } else {
-      // No Firestore profile — create one and show dashboard
-      const student = {
-        uid:user.uid, name:user.displayName||user.email.split('@')[0],
-        email:user.email, classCode:null, teacherName:null,
-        plan:'student', status:'active', purchasedAt:Date.now()
-      };
-      try { await db.collection('users').doc(user.uid).set({...student,role:'student',createdAt:Date.now()}); } catch(e2){}
-      localStorage.setItem('dtwd_student', JSON.stringify(student));
-      currentStudent = student;
-      showLoading(false);
-      showDashboard();
+async function syncFromFirestore(user){
+  try{
+    const doc=await Promise.race([db.collection('users').doc(user.uid).get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))]);
+    if(doc.exists){
+      const data=doc.data();
+      if(data.role==='teacher'){window.location.href='dashboard.html';return;}
+      const student={uid:user.uid,name:data.name||user.displayName||user.email.split('@')[0],email:user.email,classCode:data.classCode||null,teacherName:data.teacherName||null,plan:'student',status:data.status||'active',purchasedAt:data.purchasedAt||Date.now(),classExpiresAt:data.classExpiresAt||null};
+      localStorage.setItem('dtwd_student',JSON.stringify(student));
+      if(!hasPaid(student)){currentStudent=student;showLoading(false);showPaymentGate();return;}
+      currentStudent=student;
+      const dash=document.getElementById('screen-dashboard');
+      if(dash&&dash.classList.contains('active')){updateWelcomeStats();renderClassTab();return;}
+      showLoading(false);showDashboard();
+    }else{
+      const student={uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,classCode:null,teacherName:null,plan:'student',status:'active',purchasedAt:Date.now()};
+      try{await db.collection('users').doc(user.uid).set({...student,role:'student',createdAt:Date.now()});}catch(e2){}
+      localStorage.setItem('dtwd_student',JSON.stringify(student));
+      currentStudent=student;showLoading(false);showDashboard();
     }
-
-  } catch(fsErr) {
-    console.warn('Firestore unavailable:', fsErr.message);
-    if (!currentStudent) {
-      // Create minimal session
-      currentStudent = {
-        uid:user.uid, name:user.displayName||user.email.split('@')[0],
-        email:user.email, classCode:null, teacherName:null,
-        plan:'student', status:'active', purchasedAt:Date.now()
-      };
-      localStorage.setItem('dtwd_student', JSON.stringify(currentStudent));
-      showLoading(false);
-      showDashboard();
+  }catch(fsErr){
+    console.warn('Firestore unavailable:',fsErr.message);
+    if(!currentStudent){
+      currentStudent={uid:user.uid,name:user.displayName||user.email.split('@')[0],email:user.email,classCode:null,teacherName:null,plan:'student',status:'active',purchasedAt:Date.now()};
+      localStorage.setItem('dtwd_student',JSON.stringify(currentStudent));
+      showLoading(false);showDashboard();
     }
-    // If currentStudent already set, dashboard is already showing — do nothing
   }
 }
 
-function showLoading(on) {
-  let el = document.getElementById('loading-overlay');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'loading-overlay';
-    el.style.cssText = 'position:fixed;inset:0;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;font-family:inherit;gap:16px;';
-    el.innerHTML = '<div style="font-size:3rem;">🙏</div><div style="font-size:1rem;font-weight:700;">Loading your dashboard...</div><div style="width:40px;height:40px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-    document.body.appendChild(el);
-  }
-  el.style.display = on ? 'flex' : 'none';
+function showLoading(on){
+  let el=document.getElementById('loading-overlay');
+  if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;font-family:inherit;gap:16px;';el.innerHTML='<div style="font-size:3rem;">🙏</div><div style="font-size:1rem;font-weight:700;">Loading your dashboard...</div><div style="width:40px;height:40px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';document.body.appendChild(el);}
+  el.style.display=on?'flex':'none';
 }
 
-function showError(msg) {
-  document.body.innerHTML = '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;"><div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div><p style="color:#4b5563;margin-bottom:20px;">'+msg+'</p><button onclick="location.reload()" style="padding:12px 24px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;">Try Again</button></div></div>';
-}
+function showError(msg){document.body.innerHTML='<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;"><div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div><p style="color:#4b5563;margin-bottom:20px;">'+msg+'</p><button onclick="location.reload()" style="padding:12px 24px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;">Try Again</button></div></div>';}
 
-function showVerifyPrompt(user) {
-  document.body.innerHTML = '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px 28px;max-width:400px;width:100%;text-align:center;"><div style="font-size:3rem;margin-bottom:12px;">📧</div><h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Verify Your Email</h2><p style="font-size:.88rem;color:#4b5563;margin-bottom:20px;line-height:1.6;">We sent a verification email to <strong>'+user.email+'</strong>.<br><br>Check your inbox and spam folder, then click the link to activate your account.</p><button onclick="resendVerify()" style="width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:10px;">📧 Resend Verification Email</button><button onclick="auth.signOut().then(function(){window.location.href=\'auth.html\';})" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">← Back to Login</button></div></div>';
-}
+function showVerifyPrompt(user){document.body.innerHTML='<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:32px 28px;max-width:400px;width:100%;text-align:center;"><div style="font-size:3rem;margin-bottom:12px;">📧</div><h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Verify Your Email</h2><p style="font-size:.88rem;color:#4b5563;margin-bottom:20px;line-height:1.6;">We sent a verification email to <strong>'+user.email+'</strong>.<br><br>Check your inbox and spam folder, then click the link.</p><button onclick="resendVerify()" style="width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:10px;">📧 Resend Verification Email</button><button onclick="auth.signOut().then(function(){window.location.href=\'auth.html\';})" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;">← Back to Login</button></div></div>';}
+async function resendVerify(){try{const u=auth.currentUser;if(u){await u.sendEmailVerification();alert('✅ Verification email resent! Check your inbox.');}}catch(e){alert('Error: '+e.message);}}
 
-async function resendVerify() {
-  try { const u=auth.currentUser; if(u){await u.sendEmailVerification();alert('✅ Verification email resent! Check your inbox.');} } catch(e){alert('Error: '+e.message);}
-}
-
-// ===== PAYMENT GATE =====
-function showPaymentGate(type) {
+// ===== PAYMENT GATE — only shows once, no loop =====
+function showPaymentGate(){
   showLoading(false);
-  const price = type==='teacher' ? '$30–$300' : '$7';
-  const plan  = type==='teacher' ? (currentStudent && currentStudent.plan) || 'medium' : 'student';
-  const email = (currentStudent && currentStudent.email) ? encodeURIComponent(currentStudent.email) : '';
-  const name  = (currentStudent && currentStudent.name)  ? encodeURIComponent(currentStudent.name)  : '';
-
-  document.body.innerHTML =
-    '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;">' +
-    '<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:420px;width:100%;text-align:center;">' +
-    '<div style="font-size:3rem;margin-bottom:12px;">🔒</div>' +
-    '<h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Complete Your Payment</h2>' +
-    '<p style="font-size:.9rem;color:#4b5563;margin-bottom:6px;line-height:1.6;">Your account is created and verified!<br>Complete your ' + price + ' payment to unlock full access to your dashboard.</p>' +
-    '<p style="font-size:.8rem;color:#9ca3af;margin-bottom:24px;">One-time payment for students. 3-month subscription for teachers.</p>' +
-    '<button onclick="window.location.href=\'pricing.html?plan=' + plan + '&email=' + email + '&name=' + name + '\'" style="width:100%;padding:14px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">💳 Complete Payment — ' + price + '</button>' +
-    '<button onclick="auth.signOut().then(function(){localStorage.removeItem(\'dtwd_student\');window.location.replace(\'auth.html\');})" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;">← Sign Out</button>' +
-    '</div></div>';
+  const email=(currentStudent&&currentStudent.email)?encodeURIComponent(currentStudent.email):'';
+  const name=(currentStudent&&currentStudent.name)?encodeURIComponent(currentStudent.name):'';
+  const plan=(currentStudent&&currentStudent.plan&&currentStudent.plan!=='student')?currentStudent.plan:'student';
+  document.body.innerHTML='<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;"><div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:420px;width:100%;text-align:center;"><div style="font-size:3rem;margin-bottom:12px;">🔒</div><h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Complete Your Payment</h2><p style="font-size:.9rem;color:#4b5563;margin-bottom:6px;line-height:1.6;">Your account is created and verified!<br>Complete your $7 payment to unlock your dashboard.</p><p style="font-size:.8rem;color:#9ca3af;margin-bottom:24px;">One-time payment. Lifetime access.</p><button onclick="window.location.href=\'pricing.html?plan='+plan+'&email='+email+'&name='+name+'\'" style="width:100%;padding:14px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">💳 Complete Payment — $7</button><button onclick="auth.signOut().then(function(){localStorage.removeItem(\'dtwd_student\');window.location.replace(\'auth.html\');})" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;">← Sign Out</button></div></div>';
 }
 
 // ===== SHOW DASHBOARD =====
-function showDashboard() {
-  document.querySelectorAll('.screen').forEach(s => {
-    s.style.display = 'none';
-    s.classList.remove('active');
-  });
-  const dash = document.getElementById('screen-dashboard');
-  if (!dash) { showError('Dashboard element not found. Please check student.html has id="screen-dashboard".'); return; }
-  dash.style.display = 'block';
-  dash.classList.add('active');
-
-  const nameBadge  = document.getElementById('student-name-badge');
-  const welcomeName = document.getElementById('welcome-name');
-  const welcomeClass = document.getElementById('welcome-class');
-  if (nameBadge)   nameBadge.textContent  = '👤 ' + (currentStudent.name||'Student');
-  if (welcomeName) welcomeName.textContent = 'Welcome, ' + (currentStudent.name||'Student') + '! 🙏';
-  if (welcomeClass) welcomeClass.textContent = currentStudent.classCode
-    ? '📚 Class: '+currentStudent.classCode+(currentStudent.teacherName?' — Teacher: '+currentStudent.teacherName:'')
-    : '📖 No class yet — go to My Class tab to join one';
-
-  loadUserData(); updateWelcomeStats(); renderProgressTab(); renderSubmissionsTab(); renderFeedbackTab(); renderClassTab();
+function showDashboard(){
+  document.querySelectorAll('.screen').forEach(s=>{s.style.display='none';s.classList.remove('active');});
+  const dash=document.getElementById('screen-dashboard');
+  if(!dash){showError('Dashboard element not found.');return;}
+  dash.style.display='block';dash.classList.add('active');
+  const nb=document.getElementById('student-name-badge');const wn=document.getElementById('welcome-name');const wc=document.getElementById('welcome-class');
+  if(nb)nb.textContent='👤 '+(currentStudent.name||'Student');
+  if(wn)wn.textContent='Welcome, '+(currentStudent.name||'Student')+'! 🙏';
+  if(wc)wc.textContent=currentStudent.classCode?'📚 Class: '+currentStudent.classCode+(currentStudent.teacherName?' — Teacher: '+currentStudent.teacherName:''):'📖 No class yet — go to My Class tab to join one';
+  loadUserData();updateWelcomeStats();renderProgressTab();renderSubmissionsTab();renderFeedbackTab();renderClassTab();
 }
 
-let userData = {};
+let userData={};
 function loadUserData(){try{const s=localStorage.getItem('dtwd_userdata');if(s)userData=JSON.parse(s);}catch(e){userData={};}}
 function getUserKey(k){return userData[k]||'';}
 
@@ -223,15 +111,11 @@ function updateWelcomeStats(){
   const subs=getSubmissions();
   const wsC=document.getElementById('ws-completed');const wsS=document.getElementById('ws-submitted');const wsG=document.getElementById('ws-graded');
   if(wsC)wsC.textContent=done;if(wsS)wsS.textContent=subs.length;
-  if(wsG){
-    if(currentStudent.uid){db.collection('feedback').where('studentUid','==',currentStudent.uid).get().then(snap=>{wsG.textContent=snap.size;}).catch(()=>{wsG.textContent=0;});}
-    else wsG.textContent=0;
-  }
+  if(wsG){if(currentStudent.uid){db.collection('feedback').where('studentUid','==',currentStudent.uid).get().then(snap=>{wsG.textContent=snap.size;}).catch(()=>{wsG.textContent=0;});}else wsG.textContent=0;}
 }
 
 function renderProgressTab(){
-  const container=document.getElementById('progress-list');
-  if(!container||typeof APP_DATA==='undefined')return;
+  const container=document.getElementById('progress-list');if(!container||typeof APP_DATA==='undefined')return;
   container.innerHTML='';
   APP_DATA.chapters.forEach(ch=>{
     const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
@@ -253,10 +137,8 @@ function getSubmissions(){try{return JSON.parse(localStorage.getItem('dtwd_submi
 function saveSubmissions(s){localStorage.setItem('dtwd_submissions',JSON.stringify(s));}
 
 function renderSubmissionsTab(){
-  const container=document.getElementById('submit-list');
-  if(!container||typeof APP_DATA==='undefined')return;
-  container.innerHTML='';
-  const subs=getSubmissions();
+  const container=document.getElementById('submit-list');if(!container||typeof APP_DATA==='undefined')return;
+  container.innerHTML='';const subs=getSubmissions();
   APP_DATA.chapters.forEach(ch=>{
     const lessons=ch.lessons.map(lid=>APP_DATA.lessons.find(l=>l.id===lid)).filter(Boolean);
     const anyDone=lessons.some(l=>getUserKey('complete_prayer_'+l.id+'_after')==='true');
@@ -273,8 +155,7 @@ function renderSubmissionsTab(){
 }
 
 function openSubmitModal(chapterId){
-  const subs=getSubmissions();
-  if(subs.some(s=>s.chapterId===chapterId))return;
+  const subs=getSubmissions();if(subs.some(s=>s.chapterId===chapterId))return;
   if(!currentStudent.classCode){alert('Please join a class first.');return;}
   if(typeof APP_DATA==='undefined')return;
   const ch=APP_DATA.chapters.find(c=>c.id===chapterId);if(!ch)return;
@@ -283,7 +164,7 @@ function openSubmitModal(chapterId){
   currentSubmitChapterId=chapterId;
   const chEl=document.getElementById('submit-modal-chapter');const sumEl=document.getElementById('submit-summary');
   if(chEl)chEl.textContent='Chapter '+ch.id+': '+ch.title;
-  if(sumEl)sumEl.innerHTML='<strong>What will be submitted:</strong><br>✅ '+done+' of '+lessons.length+' lessons completed<br>📝 All your answers and notes<br>🎨 Your sketch pages<br>💎 Treasure chest notes<br><br><strong>Sending to:</strong> '+(currentStudent.teacherName||'Your Teacher')+' (Class: '+currentStudent.classCode+')';
+  if(sumEl)sumEl.innerHTML='<strong>What will be submitted:</strong><br>✅ '+done+' of '+lessons.length+' lessons completed<br>📝 All answers and notes<br>🎨 Sketch pages<br>💎 Treasure chest notes<br><br><strong>Sending to:</strong> '+(currentStudent.teacherName||'Your Teacher')+' (Class: '+currentStudent.classCode+')';
   const modal=document.getElementById('submit-modal');if(modal)modal.classList.remove('hidden');
 }
 
@@ -295,12 +176,12 @@ async function finalSubmit(){
   let answers={},treasureNotes={};
   lessons.forEach(lesson=>{try{answers[lesson.id]=JSON.parse(getUserKey('questions_'+lesson.id)||'{}');}catch(e){}try{treasureNotes[lesson.id]=JSON.parse(getUserKey('treasure_'+lesson.id)||'{}');}catch(e){}});
   const submission={studentUid:currentStudent.uid,studentName:currentStudent.name,studentEmail:currentStudent.email,classCode:currentStudent.classCode,chapterId:currentSubmitChapterId,chapterTitle:'Chapter '+ch.id+': '+ch.title,message,answers,treasureNotes,personalApp:getUserKey('personal_'+currentSubmitChapterId),submittedAt:Date.now(),status:'submitted'};
-  try{await db.collection('submissions').add(submission);}catch(e){console.warn('Firestore error:',e);}
+  try{await db.collection('submissions').add(submission);}catch(e){console.warn('Firestore submission:',e);}
   const subs=getSubmissions();subs.push({...submission,id:'sub_'+Date.now()});saveSubmissions(subs);
   closeModal('submit-modal');
-  const successMsg=document.getElementById('success-msg');const successModal=document.getElementById('success-modal');
-  if(successMsg)successMsg.innerHTML='Chapter '+ch.id+' submitted to your teacher! 🙏<br><br>Your teacher will review and send feedback soon.';
-  if(successModal)successModal.classList.remove('hidden');
+  const sm=document.getElementById('success-msg');const smModal=document.getElementById('success-modal');
+  if(sm)sm.innerHTML='Chapter '+ch.id+' submitted to your teacher! 🙏<br><br>Your teacher will review and send feedback soon.';
+  if(smModal)smModal.classList.remove('hidden');
   renderSubmissionsTab();updateWelcomeStats();
 }
 
@@ -324,10 +205,7 @@ async function renderFeedbackTab(){
 
 function renderClassTab(){
   const container=document.getElementById('class-info');if(!container)return;
-  if(!currentStudent.classCode){
-    container.innerHTML='<div class="no-class-box"><div>🏫</div><p>You are not enrolled in a class yet.</p><button class="btn-login" style="margin-top:12px;width:auto;padding:10px 24px;" onclick="promptJoinClass()">+ Join a Class</button></div>';
-    return;
-  }
+  if(!currentStudent.classCode){container.innerHTML='<div class="no-class-box"><div>🏫</div><p>Not enrolled in a class yet.</p><button class="btn-login" style="margin-top:12px;width:auto;padding:10px 24px;" onclick="promptJoinClass()">+ Join a Class</button></div>';return;}
   const expiry=currentStudent.classExpiresAt?new Date(currentStudent.classExpiresAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'Active';
   container.innerHTML='<div class="class-code-big">'+currentStudent.classCode+'</div><div class="class-info-row"><span class="class-info-label">Teacher</span><span class="class-info-val">'+(currentStudent.teacherName||'Your Teacher')+'</span></div><div class="class-info-row"><span class="class-info-label">Status</span><span class="class-info-val" style="color:#16a34a;">✅ Active</span></div><div class="class-info-row"><span class="class-info-label">Class Expires</span><span class="class-info-val">'+expiry+'</span></div><div class="class-info-row"><span class="class-info-label">Your Plan</span><span class="class-info-val">Student Access — $7 one time</span></div>';
 }
@@ -349,8 +227,8 @@ function logout(){auth.signOut().then(()=>{localStorage.removeItem('dtwd_student
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  const tabBtn=document.getElementById('tab-'+tab);const tabContent=document.getElementById('tab-content-'+tab);
-  if(tabBtn)tabBtn.classList.add('active');if(tabContent)tabContent.classList.add('active');
+  const tb=document.getElementById('tab-'+tab);const tc=document.getElementById('tab-content-'+tab);
+  if(tb)tb.classList.add('active');if(tc)tc.classList.add('active');
   if(tab==='feedback')renderFeedbackTab();
 }
 function closeModal(id){const el=document.getElementById(id);if(el)el.classList.add('hidden');}
