@@ -88,6 +88,23 @@ async function resendVerify() {
 }
 
 function showDashboard() {
+  // PAYMENT GATE — check if student has paid
+  const pending = localStorage.getItem('dtwd_pending_signup');
+  if (pending) {
+    try {
+      const p = JSON.parse(pending);
+      if (p.email === currentStudent.email && p.status !== 'active') {
+        showPaymentGate('student');
+        return;
+      }
+    } catch(e) {}
+  }
+  // Also check Firestore status
+  if (currentStudent.status === 'pending_payment') {
+    showPaymentGate('student');
+    return;
+  }
+
   // Hide ALL other screens first
   document.querySelectorAll('.screen').forEach(s => {
     s.style.display = 'none';
@@ -101,6 +118,21 @@ function showDashboard() {
   document.getElementById('welcome-name').textContent  = 'Welcome, ' + currentStudent.name + '! 🙏';
   document.getElementById('welcome-class').textContent = currentStudent.classCode ? '📚 Class: '+currentStudent.classCode+(currentStudent.teacherName?' — Teacher: '+currentStudent.teacherName:'') : '📖 No class yet — go to My Class tab to join one';
   loadUserData(); updateWelcomeStats(); renderProgressTab(); renderSubmissionsTab(); renderFeedbackTab(); renderClassTab();
+}
+
+function showPaymentGate(type) {
+  showLoading(false);
+  const price = type==='teacher' ? '$30–$300' : '$7';
+  const plan  = type==='teacher' ? 'medium' : 'student';
+  document.body.innerHTML = '<div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;">' +
+    '<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:420px;width:100%;text-align:center;">' +
+    '<div style="font-size:3rem;margin-bottom:12px;">🔒</div>' +
+    '<h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Complete Your Payment</h2>' +
+    '<p style="font-size:.9rem;color:#4b5563;margin-bottom:6px;line-height:1.6;">Your account is created and verified!<br>Complete your ' + price + ' payment to unlock full access to your dashboard.</p>' +
+    '<p style="font-size:.8rem;color:#9ca3af;margin-bottom:24px;">One-time payment for students. 3-month subscription for teachers.</p>' +
+    '<button onclick="window.location.href='pricing.html?plan='+plan+'&email='+encodeURIComponent(currentStudent.email||'')+''" style="width:100%;padding:14px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">💳 Complete Payment — '+price+'</button>' +
+    '<button onclick="auth.signOut().then(()=>{localStorage.removeItem('dtwd_student');window.location.replace('auth.html')})" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;">← Sign Out</button>' +
+    '</div></div>';
 }
 
 let userData = {};
