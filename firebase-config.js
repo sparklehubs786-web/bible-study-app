@@ -19,4 +19,18 @@ if (!firebase.apps || !firebase.apps.length) {
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+// Enable offline persistence so app works even with connectivity issues
+try {
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Multiple tabs open, persistence only in one tab.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Browser does not support persistence.');
+    }
+  });
+} catch(e) {}
+
+// Set Firestore to not wait forever for server
+db.settings({ merge: true });
+
 console.log('✅ Firebase LIVE — bilble project');
