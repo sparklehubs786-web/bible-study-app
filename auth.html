@@ -1,3 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Sign In — Destroying the Works of the Devil</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#7c3aed;--pd:#5b21b6;--pl:#ede9fe;--g:#16a34a;--gd:#15803d;--gl:#dcfce7;--w:#fff;--g1:#f3f4f6;--g2:#e5e7eb;--g4:#9ca3af;--g6:#4b5563;--g8:#1f2937}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(160deg,#1e1b4b,#3730a3,#5b21b6);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--w);border-radius:20px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.logo{text-align:center;font-size:2.8rem;margin-bottom:6px}
+h1{font-size:1.4rem;font-weight:900;color:var(--pd);text-align:center;margin-bottom:4px}
+.sub{font-size:.84rem;color:var(--g6);text-align:center;margin-bottom:20px}
+.tabs{display:flex;background:var(--g1);border-radius:10px;padding:4px;margin-bottom:18px;gap:4px}
+.tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--g6);transition:all .2s}
+.tab.on{background:var(--w);color:var(--pd);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.msg{border-radius:8px;padding:12px 14px;font-size:.84rem;font-weight:600;margin-bottom:12px;display:none;line-height:1.6;word-break:break-word}
+.err{background:#fee2e2;color:#991b1b}
+.ok{background:var(--gl);color:var(--gd)}
+.info{background:#dbeafe;color:#1e40af}
+.warn{background:#fef3c7;color:#92400e}
+.rl{font-size:.8rem;font-weight:700;color:var(--g8);margin-bottom:8px;display:block}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.role{border:2px solid var(--g2);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s}
+.role:hover,.role.on{border-color:var(--p);background:var(--pl)}
+.role.ont{border-color:var(--g)!important;background:var(--gl)!important}
+.ri{font-size:1.8rem;margin-bottom:5px}.rn{font-size:.85rem;font-weight:800;color:var(--g8)}.rp{font-size:.7rem;color:var(--g6);margin-top:2px}
+.psel{width:100%;padding:11px 14px;border:2px solid var(--g2);border-radius:10px;font-size:.88rem;outline:none;font-family:inherit;background:#f9fafb;cursor:pointer;margin-bottom:8px}
+.psel:focus{border-color:var(--g)}
+.pinfo{background:var(--gl);border-radius:8px;padding:8px 12px;font-size:.78rem;color:var(--gd);font-weight:600;margin-bottom:10px;display:none}
+.fields{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.inp{width:100%;padding:11px 14px;border:2px solid var(--g2);border-radius:10px;font-size:.92rem;outline:none;font-family:inherit;transition:border-color .2s;background:#f9fafb}
+.inp:focus{border-color:var(--p);background:var(--w)}
+.ps{font-size:.72rem;font-weight:700;margin-top:-6px}.pw{color:#ef4444}.pm{color:#d97706}.pg{color:var(--gd)}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.bp{background:var(--p);color:var(--w)}.bp:hover:not(:disabled){background:var(--pd)}
+.bg{background:var(--g);color:var(--w)}.bg:hover:not(:disabled){background:var(--gd)}
+.bgo{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--w);border:2px solid var(--g2);color:var(--g8);font-size:.92rem;font-weight:700}
+.bgo:hover:not(:disabled){background:#f9fafb}
+.div{text-align:center;font-size:.78rem;color:var(--g4);margin:6px 0}
+.vb{background:#dbeafe;border-radius:8px;padding:10px 12px;font-size:.8rem;color:#1e40af;font-weight:600;margin-bottom:10px;display:none;line-height:1.5}
+.foot{text-align:center;font-size:.78rem;color:var(--g6);margin-top:12px}
+.foot a{color:var(--p);font-weight:700;text-decoration:none;cursor:pointer}
+.fgt{text-align:center;margin-bottom:8px}
+.fgt a{font-size:.78rem;color:var(--p);font-weight:600;cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<div class="card">
+  <div class="logo">🙏</div>
+  <h1>Destroying the Works<br>of the Devil</h1>
+  <p class="sub">Interactive Bible Study — Book of Luke</p>
+
+  <div class="tabs">
+    <button class="tab on" id="ti" onclick="setMode('login')">Sign In</button>
+    <button class="tab"    id="tu" onclick="setMode('signup')">Create Account</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <!-- Role selector — signup only -->
+  <div id="sec-role" style="display:none">
+    <span class="rl">I am a:</span>
+    <div class="roles">
+      <div class="role on" id="rs" onclick="setRole('student')">
+        <div class="ri">👤</div><div class="rn">Student</div><div class="rp">$7 one time</div>
+      </div>
+      <div class="role" id="rt" onclick="setRole('teacher')">
+        <div class="ri">👨‍🏫</div><div class="rn">Teacher</div><div class="rp">From $30/3 months</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teacher plan -->
+  <div id="sec-plan" style="display:none">
+    <span class="rl">Select your class plan:</span>
+    <select class="psel" id="plan" onchange="onPlan()">
+      <option value="">— Choose your plan —</option>
+      <option value="small">Small Group — up to 15 students — $30</option>
+      <option value="medium">Medium Group — up to 30 students — $60</option>
+      <option value="large">Large Group — up to 60 students — $120</option>
+      <option value="xl">Extra Large — up to 100 students — $300</option>
+    </select>
+    <div class="pinfo" id="pinfo"></div>
+  </div>
+
+  <button class="btn bgo" id="btn-google" onclick="googleAuthPopup()">
+    <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G"/>
+    <span id="glbl">Continue with Google</span>
+  </button>
+  <div class="div">— or use email —</div>
+
+  <div class="vb" id="vbanner">
+    📧 After signing up you will receive a verification email.<br>
+    Check your <strong>inbox AND spam/junk folder</strong> and click the link before signing in.
+  </div>
+
+  <div class="fields">
+    <input class="inp" type="text"     id="fn" placeholder="Full name"       style="display:none" autocomplete="name"/>
+    <input class="inp" type="email"    id="fe" placeholder="Email address"    autocomplete="email"/>
+    <input class="inp" type="password" id="fp" placeholder="Password"         autocomplete="current-password" oninput="pwStr(this.value)"/>
+    <div class="ps" id="pws"></div>
+    <input class="inp" type="password" id="fc" placeholder="Confirm password" style="display:none" autocomplete="new-password"/>
+  </div>
+
+  <div class="fgt" id="fgt-row"><a onclick="forgotPwd()">Forgot your password?</a></div>
+  <button class="btn bp" id="bsub" onclick="go()">Sign In</button>
+
+  <div class="foot" id="ftext">
+    Don't have an account? <a onclick="setMode('signup')">Create one free →</a>
+  </div>
+  <div class="foot" style="margin-top:8px;">
+    <a href="index.html">← Back to App</a> &nbsp;|&nbsp; <a href="pricing.html">View Pricing</a>
+  </div>
+</div>
+
+<script>
 // ===== STATE =====
 let mode = 'login';
 let role = 'student';
@@ -105,13 +232,7 @@ async function go() {
 
 // ===== LOGIN =====
 async function doLogin(email, pass) {
-  let cred;
-  try {
-    cred = await auth.signInWithEmailAndPassword(email, pass);
-  } catch(e) {
-    throw e;
-  }
-
+  const cred = await auth.signInWithEmailAndPassword(email, pass);
   const u = cred.user;
 
   if (!u.emailVerified) {
@@ -130,9 +251,7 @@ async function doLogin(email, pass) {
     return;
   }
 
-  let userRole = 'student';
-  let userStatus = 'active';
-  let profile = null;
+  let userRole = 'student', userStatus = 'active', profile = null;
 
   try {
     const doc = await db.collection('users').doc(u.uid).get();
@@ -150,9 +269,7 @@ async function doLogin(email, pass) {
     const savedS = localStorage.getItem('dtwd_student');
     if (savedT) { try { const t=JSON.parse(savedT); if(t.email===email){userRole='teacher';profile=t;userStatus=t.status||'active';} } catch(e){} }
     else if (savedS) { try { const s=JSON.parse(savedS); if(s.email===email){userRole='student';profile=s;userStatus=s.status||'active';} } catch(e){} }
-    if (!profile) {
-      profile = { uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student', status:'active' };
-    }
+    if (!profile) profile = { uid:u.uid, name:u.displayName||u.email.split('@')[0], email:u.email, role:'student', status:'active' };
   }
 
   saveSession({ ...profile, uid:u.uid });
@@ -177,9 +294,7 @@ async function resendVerify(email, pass) {
     await cred.user.sendEmailVerification();
     await auth.signOut();
     showMsg('✅ Verification email resent to '+email+'.\n\nCheck your <strong>inbox AND spam/junk folder</strong>.', 'ok');
-  } catch(e) {
-    showMsg(nice(e.code||e.message), 'err');
-  }
+  } catch(e) { showMsg(nice(e.code||e.message), 'err'); }
 }
 
 // ===== SIGNUP =====
@@ -187,46 +302,33 @@ async function doSignup(email, pass, name) {
   const pv = document.getElementById('plan').value;
 
   if (role === 'teacher') {
-    let teacherUid = null;
-    try {
-      const cred = await auth.createUserWithEmailAndPassword(email, pass);
-      const u = cred.user;
-      teacherUid = u.uid;
-      try { await u.updateProfile({ displayName: name }); } catch(e2){}
-      try { await u.sendEmailVerification(); } catch(e2){ console.warn('Verify email error:', e2); }
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const u = cred.user;
+    try { await u.updateProfile({ displayName: name }); } catch(e2){}
+    try { await u.sendEmailVerification(); } catch(e2){ console.warn('Verify email error:', e2); }
 
-      const classCode = genCode();
-      const profile = {
-        uid: teacherUid, name, email,
-        role: 'teacher', plan: pv,
-        classCode,
-        maxStudents: PL[pv]?.max || 30,
-        teacherName: name,
-        createdAt: Date.now(),
-        status: 'pending_payment',
-        expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
-      };
-      try { await db.collection('users').doc(teacherUid).set(profile); } catch(e2){ console.warn('Firestore:', e2); }
+    const classCode = genCode();
+    const profile = {
+      uid: u.uid, name, email, role: 'teacher', plan: pv,
+      classCode, maxStudents: PL[pv]?.max || 30, teacherName: name,
+      createdAt: Date.now(), status: 'pending_payment',
+      expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
+    };
+    try { await db.collection('users').doc(u.uid).set(profile); } catch(e2){ console.warn('Firestore:', e2); }
 
-      localStorage.setItem('dtwd_teacher', JSON.stringify({
-        uid: teacherUid, name, email,
-        classCode, plan: pv,
-        maxStudents: PL[pv]?.max || 30,
-        status: 'pending_payment',
-        expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
-      }));
-      localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, name, role:'teacher', plan:pv, uid:teacherUid, status:'pending_payment' }));
+    localStorage.setItem('dtwd_teacher', JSON.stringify({
+      uid: u.uid, name, email, classCode, plan: pv,
+      maxStudents: PL[pv]?.max || 30, status: 'pending_payment',
+      expiresAt: Date.now() + (90 * 24 * 60 * 60 * 1000)
+    }));
+    localStorage.setItem('dtwd_pending_signup', JSON.stringify({ email, name, role:'teacher', plan:pv, uid:u.uid, status:'pending_payment' }));
 
-      await auth.signOut();
-      setBusy(false);
-      showMsg('✅ Teacher account created! A verification email was sent to <strong>'+email+'</strong>.<br><br>Check inbox AND spam folder. After verifying, complete payment to activate your dashboard.', 'ok');
-
-      setTimeout(() => {
-        window.location.href = 'pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name);
-      }, 3000);
-    } catch(e) {
-      throw e;
-    }
+    await auth.signOut();
+    setBusy(false);
+    showMsg('✅ Teacher account created! A verification email was sent to <strong>'+email+'</strong>.<br><br>Check inbox AND spam folder. After verifying, complete payment to activate your dashboard.', 'ok');
+    setTimeout(() => {
+      window.location.href = 'pricing.html?plan='+pv+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(name);
+    }, 3000);
     return;
   }
 
@@ -245,7 +347,6 @@ async function doSignup(email, pass, name) {
   await auth.signOut();
   setBusy(false);
   showMsg('✅ Account created! A verification email was sent to <strong>'+email+'</strong>.<br><br>Check inbox AND spam folder. After verifying your email, come back here to sign in and complete payment.', 'ok');
-
   setTimeout(() => {
     setMode('login');
     document.getElementById('fe').value = email;
@@ -253,17 +354,20 @@ async function doSignup(email, pass, name) {
   }, 3500);
 }
 
-// ===== GOOGLE AUTH — FIXED =====
+// ===== GOOGLE AUTH — FULLY FIXED =====
 async function googleAuthPopup() {
   if (busy) return;
 
-  // ── FIX: capture role/plan BEFORE any async work ──
-  const chosenRole = role; // 'student' or 'teacher'
-  const chosenPlan = chosenRole === 'teacher'
-    ? (document.getElementById('plan').value || 'medium')
+  // ── CRITICAL: capture role & plan BEFORE any async call ──
+  // After signInWithPopup returns, the DOM state may have shifted
+  const chosenRole = role;   // 'student' or 'teacher'
+  const chosenPlan = (chosenRole === 'teacher')
+    ? (document.getElementById('plan').value || '')
     : 'student';
+  const chosenMode = mode;   // 'login' or 'signup'
 
-  if (mode === 'signup' && chosenRole === 'teacher' && !chosenPlan) {
+  // Validate teacher plan before opening popup
+  if (chosenMode === 'signup' && chosenRole === 'teacher' && !chosenPlan) {
     showMsg('Please select a teacher plan first.', 'err');
     return;
   }
@@ -275,12 +379,11 @@ async function googleAuthPopup() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-
     const result = await auth.signInWithPopup(provider);
     const u = result.user;
-    console.log('Google popup success:', u.email, '| chosenRole:', chosenRole);
+    console.log('Google popup success:', u.email, '| chosenRole:', chosenRole, '| chosenMode:', chosenMode);
 
-    // ── Check Firestore for existing profile ──
+    // ── Look up Firestore profile ──
     let profile = null;
     let isNew = false;
     try {
@@ -292,54 +395,49 @@ async function googleAuthPopup() {
       }
     } catch(fsErr) {
       console.warn('Firestore error:', fsErr.message);
-      // Fallback: check localStorage
       const savedT = localStorage.getItem('dtwd_teacher');
       const savedS = localStorage.getItem('dtwd_student');
-      if (savedT) { try { const t=JSON.parse(savedT); if(t.email===u.email){profile=t;} } catch(e){} }
-      else if (savedS) { try { const s=JSON.parse(savedS); if(s.email===u.email){profile=s;} } catch(e){} }
+      if (savedT) { try { const t=JSON.parse(savedT); if(t.email===u.email) profile=t; } catch(e){} }
+      else if (savedS) { try { const s=JSON.parse(savedS); if(s.email===u.email) profile=s; } catch(e){} }
     }
 
     if (!profile || isNew) {
       // ── NEW Google user ──
+      // FIX: always pending_payment for brand-new signups regardless of mode
       const classCode = chosenRole === 'teacher' ? genCode() : null;
       const newProfile = {
         uid: u.uid,
         name: u.displayName || u.email.split('@')[0],
         email: u.email,
-        role: chosenRole,         // ← FIX: use chosenRole, not hardcoded
-        plan: chosenPlan,
+        role: chosenRole,            // ← use captured role
+        plan: chosenPlan || 'student',
         classCode,
         teacherName: chosenRole === 'teacher' ? (u.displayName || '') : null,
         createdAt: Date.now(),
-        status: 'pending_payment', // ← FIX: always pending for new signups
+        status: 'pending_payment',   // ← always pending for new users
         maxStudents: PL[chosenPlan]?.max || 30,
         expiresAt: Date.now() + (90*24*60*60*1000)
       };
-      try {
-        await db.collection('users').doc(u.uid).set(newProfile);
-      } catch(e2) { console.warn(e2); }
+      try { await db.collection('users').doc(u.uid).set(newProfile); } catch(e2){ console.warn(e2); }
 
-      // Save to localStorage
       saveSession({ ...newProfile, uid:u.uid });
       localStorage.setItem('dtwd_pending_signup', JSON.stringify(newProfile));
 
       setBusy(false);
-
-      // ── FIX: Always redirect to pricing for new Google signups ──
-      const planParam = chosenRole === 'teacher' ? chosenPlan : 'student';
+      // Always go to pricing for new Google users
+      const planParam = chosenRole === 'teacher' ? (chosenPlan || 'medium') : 'student';
       window.location.href = 'pricing.html?plan='+planParam
         +'&email='+encodeURIComponent(u.email)
         +'&name='+encodeURIComponent(u.displayName||'');
       return;
     }
 
-    // ── EXISTING Google user ──
-    const userRole   = profile.role   || chosenRole;
+    // ── EXISTING Google user — check payment status ──
+    const userRole   = profile.role   || 'student';
     const userStatus = profile.status || 'active';
 
     saveSession({ ...profile, uid:u.uid });
 
-    // ── FIX: Check payment status for existing users too ──
     if (userStatus === 'pending_payment') {
       setBusy(false);
       const planParam = userRole === 'teacher' ? (profile.plan || 'medium') : 'student';
@@ -374,9 +472,7 @@ async function forgotPwd() {
   try {
     await auth.sendPasswordResetEmail(e);
     showMsg('✅ Password reset email sent to '+e+'.\n\nCheck inbox AND spam/junk folder.', 'ok');
-  } catch(err) {
-    showMsg(nice(err.code||err.message), 'err');
-  }
+  } catch(err) { showMsg(nice(err.code||err.message), 'err'); }
 }
 
 // ===== SAVE SESSION =====
@@ -427,17 +523,17 @@ function clrMsg() { document.getElementById('msg').style.display='none'; }
 
 function nice(c) {
   const m = {
-    'auth/user-not-found':          'No account found with that email. Please create an account first.',
-    'auth/wrong-password':          'Incorrect password. Please try again or use Forgot Password.',
-    'auth/invalid-credential':      'Email or password is incorrect. Please check and try again.',
+    'auth/user-not-found':           'No account found with that email. Please create an account first.',
+    'auth/wrong-password':           'Incorrect password. Please try again or use Forgot Password.',
+    'auth/invalid-credential':       'Email or password is incorrect. Please check and try again.',
     'auth/invalid-login-credentials':'Email or password is incorrect. Please check your email is verified and try again.',
-    'auth/email-already-in-use':    'An account with this email already exists. Please sign in instead.',
-    'auth/invalid-email':           'Please enter a valid email address.',
-    'auth/weak-password':           'Password must be at least 6 characters.',
-    'auth/too-many-requests':       'Too many attempts. Please wait a few minutes and try again.',
-    'auth/popup-closed-by-user':    'Sign-in was cancelled. Please try again.',
-    'auth/network-request-failed':  'Network error. Please check your internet connection.',
-    'auth/cancelled-popup-request': 'Please try again.',
+    'auth/email-already-in-use':     'An account with this email already exists. Please sign in instead.',
+    'auth/invalid-email':            'Please enter a valid email address.',
+    'auth/weak-password':            'Password must be at least 6 characters.',
+    'auth/too-many-requests':        'Too many attempts. Please wait a few minutes and try again.',
+    'auth/popup-closed-by-user':     'Sign-in was cancelled. Please try again.',
+    'auth/network-request-failed':   'Network error. Please check your internet connection.',
+    'auth/cancelled-popup-request':  'Please try again.',
   };
   if (c && m[c] !== undefined) return m[c] || '';
   return 'Error: '+c+'. Please try again.';
@@ -451,11 +547,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (params.get('role') === 'teacher') { setMode('signup'); setRole('teacher'); }
   else if (params.get('signup') === '1') setMode('signup');
 
+  // If already logged in and paid, redirect to dashboard
   auth.onAuthStateChanged(async u => {
     if (u && u.emailVerified) {
       console.log('User already logged in:', u.email);
-      let userRole = 'student';
-      let userStatus = 'active';
+      let userRole = 'student', userStatus = 'active';
       try {
         const doc = await db.collection('users').doc(u.uid).get();
         if (doc.exists) {
@@ -466,12 +562,17 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
       } catch(e) {
         const savedT = localStorage.getItem('dtwd_teacher');
-        if (savedT) { try { const t=JSON.parse(savedT); userRole='teacher'; userStatus=t.status||'active'; } catch(e2){} }
+        if (savedT) { try { const t=JSON.parse(savedT); if(t.email===u.email){userRole='teacher';userStatus=t.status||'active';} } catch(e2){} }
+        const savedS = localStorage.getItem('dtwd_student');
+        if (savedS && userRole!=='teacher') { try { const s=JSON.parse(savedS); if(s.email===u.email){userStatus=s.status||'active';} } catch(e2){} }
       }
-
+      // Only auto-redirect if paid — pending stays on auth page
       if (userStatus !== 'pending_payment') {
         redirect(userRole);
       }
     }
   });
 });
+</script>
+</body>
+</html>
