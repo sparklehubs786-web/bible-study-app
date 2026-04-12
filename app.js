@@ -1,3 +1,4 @@
+// ===== app js =====
 // ===== STATE =====
 let currentChapter = null;
 let currentLesson = null;
