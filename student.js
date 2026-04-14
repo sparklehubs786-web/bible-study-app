@@ -21,7 +21,10 @@ window.addEventListener('DOMContentLoaded', () => {
   auth.onAuthStateChanged(async user => {
     clearTimeout(authTimeout);
     if (!user) { showLoading(false); window.location.replace('signin.html'); return; }
-    if (!user.emailVerified) { showLoading(false); showVerifyPrompt(user); return; }
+    // Google users are auto-verified; only block email/password users who haven't verified
+    if (!user.emailVerified && user.providerData[0]?.providerId === 'password') {
+      showLoading(false); showVerifyPrompt(user); return;
+    }
 
     // ── Load from localStorage first (instant) ──
     const saved = localStorage.getItem('dtwd_student');
@@ -158,35 +161,58 @@ async function resendVerify() {
   try { const u = auth.currentUser; if (u) { await u.sendEmailVerification(); alert('✅ Verification email resent! Check your inbox and spam.'); } } catch(e) { alert('Error: ' + e.message); }
 }
 
-// ── Payment Gate — shown ONCE, replaced by dashboard after payment ──
+// ── Payment Gate — shows as overlay ON TOP of dashboard ──
+// Students can see the dashboard but everything is blurred/locked until they pay
 function showPaymentGate() {
   showLoading(false);
+  // Show dashboard first (blurred) so they can see what they'll unlock
+  showDashboard();
+  // Then show the payment overlay on top
   const email = encodeURIComponent(currentStudent?.email || '');
   const name  = encodeURIComponent(currentStudent?.name  || '');
-  document.body.innerHTML = `
-    <div style="min-height:100vh;background:linear-gradient(160deg,#1e1b4b,#5b21b6);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;">
-      <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:420px;width:100%;text-align:center;">
-        <div style="font-size:3rem;margin-bottom:12px;">🔒</div>
-        <h2 style="font-size:1.3rem;font-weight:900;color:#5b21b6;margin-bottom:10px;">Complete Your Payment</h2>
-        <p style="font-size:.9rem;color:#4b5563;margin-bottom:6px;line-height:1.6;">
-          Your account is created and verified!<br>
-          Complete your <strong>$7 one-time payment</strong> to unlock full access.
-        </p>
-        <p style="font-size:.8rem;color:#9ca3af;margin-bottom:24px;">Lifetime access · No recurring charges</p>
-        <button onclick="window.location.href='pricing.html?plan=student&email=${email}&name=${name}'"
-          style="width:100%;padding:14px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">
-          💳 Pay $7 — Unlock Dashboard
-        </button>
-        <button onclick="auth.signOut().then(function(){localStorage.removeItem('dtwd_student');window.location.replace('signin.html');})"
-          style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;">
-          ← Sign Out
-        </button>
+  const overlay = document.createElement('div');
+  overlay.id = 'payment-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:8888;display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;';
+  overlay.innerHTML = `
+    <div style="position:absolute;inset:0;background:rgba(30,27,75,0.75);backdrop-filter:blur(6px);"></div>
+    <div style="position:relative;background:#fff;border-radius:24px;padding:36px 28px;max-width:400px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5);">
+      <div style="font-size:3.5rem;margin-bottom:10px;">🔒</div>
+      <h2 style="font-size:1.4rem;font-weight:900;color:#5b21b6;margin-bottom:8px;">Unlock Full Access</h2>
+      <p style="font-size:.88rem;color:#4b5563;margin-bottom:6px;line-height:1.7;">
+        Welcome, <strong>${currentStudent.name||'Student'}!</strong> Your account is ready.<br>
+        Complete your <strong>$7 one-time payment</strong> to unlock everything.
+      </p>
+      <div style="background:#f3f4f6;border-radius:12px;padding:12px 16px;margin:14px 0;font-size:.82rem;color:#4b5563;line-height:1.8;">
+        ✅ All 12 Chapters &amp; 32 Lessons<br>
+        ✅ Highlights, Annotations &amp; Drawing<br>
+        ✅ Submit Work to Teacher<br>
+        ✅ Gateway to Heaven Board Game<br>
+        ✅ Lifetime Access — One Time Only
       </div>
+      <button onclick="goToPay()"
+        style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:800;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(124,58,237,.4);">
+        💳 Pay $7 — Unlock Everything
+      </button>
+      <button onclick="auth.signOut().then(function(){localStorage.removeItem('dtwd_student');window.location.replace('signin.html');})"
+        style="width:100%;padding:11px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;">
+        ← Sign Out
+      </button>
+      <p style="font-size:.72rem;color:#9ca3af;margin-top:10px;">🔒 Secure payment · No subscription · Pay once, use forever</p>
     </div>`;
+  document.body.appendChild(overlay);
+}
+
+function goToPay() {
+  const email = encodeURIComponent(currentStudent?.email || '');
+  const name  = encodeURIComponent(currentStudent?.name  || '');
+  window.location.href = 'pricing.html?plan=student&email=' + email + '&name=' + name;
 }
 
 // ── Show Dashboard ──
 function showDashboard() {
+  // Remove payment overlay if it exists (after successful payment)
+  const overlay = document.getElementById('payment-overlay');
+  if (overlay) overlay.remove();
   // Hide all screens
   document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
   const dash = document.getElementById('screen-dashboard');
