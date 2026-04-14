@@ -134,16 +134,10 @@ async function login(){
     let profile=null,role='student',status='active';
     try{const doc=await db.collection('users').doc(u.uid).get();if(doc.exists){profile=doc.data();role=profile.role||'student';status=profile.status||'active';}}catch(e){}
     if(!profile){profile={uid:u.uid,name:u.displayName||u.email.split('@')[0],email:u.email,role:'student',plan:'student',status:'active',createdAt:Date.now()};try{await db.collection('users').doc(u.uid).set(profile);}catch(e2){}}
-    saveLocal(profile,u.uid);
-    // Check payment
-    if(status==='pending_payment'){
-      await auth.signOut();busy=false;b.disabled=false;b.textContent='Sign In';
-      localStorage.setItem('dtwd_pending_signup',JSON.stringify(profile));
-      showMsg('💳 Please complete your payment to access your dashboard.','warn');
-      setTimeout(()=>{window.location.href='pricing.html?plan='+(role==='teacher'?(profile.plan||'medium'):'student')+'&email='+encodeURIComponent(email)+'&name='+encodeURIComponent(profile.name||'');},1500);
-      return;
-    }
-    window.location.replace(role==='teacher'?'dashboard.html':'student.html');
+    saveLocal(profile, u.uid);
+    // Students go straight to dashboard (dashboard handles payment gate)
+    // Teachers need payment handled by dashboard too
+    window.location.replace(role==='teacher' ? 'dashboard.html' : 'student.html');
   }catch(e){showMsg(nice(e.code||e.message),'err');busy=false;b.disabled=false;b.textContent='Sign In';}
 }
 
