@@ -66,7 +66,11 @@ function closeCheckout(){const modal=document.getElementById('checkout-modal');i
 
 function closeSuccess(){
   const modal=document.getElementById('success-modal');if(modal)modal.classList.add('hidden');
-  window.location.replace(currentPlan&&currentPlan.type==='teacher'?'dashboard.html':'student.html');
+  if(currentPlan&&currentPlan.type==='teacher'){
+    window.location.replace('dashboard.html');
+  } else {
+    window.location.replace('student.html');
+  }
 }
 
 async function processPayment(){
@@ -196,8 +200,9 @@ async function activateAccount(name, email) {
   if (btn) { btn.disabled = false; btn.textContent = '🔒 Pay Securely'; }
 
   // ── STEP 5: Redirect after 3 seconds ──
+  // Redirect after success message
   setTimeout(() => {
-    window.location.replace(isTeacher ? 'dashboard.html' : 'student.html');
+    closeSuccess();
   }, 3000);
 }
 
