@@ -197,7 +197,8 @@ async function activateAccount(name, email) {
 
   // ── STEP 5: Redirect after 3 seconds ──
   setTimeout(() => {
-    window.location.replace(isTeacher ? 'dashboard.html' : 'student.html');
+    window.location.replace(isTeacher ? 'dashboard.html');
+     window.location.replace(isStudent ? 'student.html');
   }, 3000);
 }
 
