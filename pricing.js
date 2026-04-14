@@ -66,8 +66,7 @@ function closeCheckout(){const modal=document.getElementById('checkout-modal');i
 
 function closeSuccess(){
   const modal=document.getElementById('success-modal');if(modal)modal.classList.add('hidden');
-  if(currentPlan&&currentPlan.type==='teacher')window.location.href='dashboard.html';
-  else window.location.href='student.html';
+  window.location.replace(currentPlan&&currentPlan.type==='teacher'?'dashboard.html':'student.html');
 }
 
 async function processPayment(){
@@ -96,77 +95,110 @@ async function processPayment(){
 }
 
 // ===== ACTIVATE ACCOUNT — Updates BOTH Firestore AND localStorage =====
-async function activateAccount(name,email){
-  const isTeacher=currentPlan&&currentPlan.type==='teacher';
-  let uid=null;
+async function activateAccount(name, email) {
+  const isTeacher = currentPlan && currentPlan.type === 'teacher';
 
-  // Get uid from pending signup
-  const pendingRaw=localStorage.getItem('dtwd_pending_signup');
-  let pending=null;
-  if(pendingRaw){try{pending=JSON.parse(pendingRaw);}catch(e){}}
-  uid=(pending&&pending.uid)||null;
+  // ── Get uid from all possible sources ──
+  let uid = null;
+  let pending = null;
+  try { pending = JSON.parse(localStorage.getItem('dtwd_pending_signup') || 'null'); } catch(e) {}
+  uid = (pending && pending.uid) || null;
+  if (!uid) { try { const u = auth.currentUser; if (u) uid = u.uid; } catch(e) {} }
+  if (!uid) {
+    try {
+      const key = isTeacher ? 'dtwd_teacher' : 'dtwd_student';
+      const saved = JSON.parse(localStorage.getItem(key) || '{}');
+      uid = saved.uid || null;
+    } catch(e) {}
+  }
+  console.log('activateAccount → uid:', uid, '| isTeacher:', isTeacher, '| plan:', currentPlan.planKey);
 
-  // Try Firebase current user
-  if(!uid){try{const u=auth.currentUser;if(u)uid=u.uid;}catch(e){}}
-
-  // Try localStorage profiles
-  if(!uid){
-    try{
-      if(isTeacher){const t=JSON.parse(localStorage.getItem('dtwd_teacher')||'{}');uid=t.uid||null;}
-      else{const s=JSON.parse(localStorage.getItem('dtwd_student')||'{}');uid=s.uid||null;}
-    }catch(e){}
+  // ── Get or generate class code for teacher ──
+  let classCode = null;
+  if (isTeacher) {
+    try { classCode = JSON.parse(localStorage.getItem('dtwd_teacher') || '{}').classCode; } catch(e) {}
+    if (!classCode && pending) classCode = pending.classCode;
+    if (!classCode) classCode = generateClassCode();
   }
 
-  console.log('Activating account for uid:',uid,'isTeacher:',isTeacher);
+  const expiresAt = Date.now() + (90 * 24 * 60 * 60 * 1000);
 
-  // Get existing class code
-  let classCode=null;
-  if(isTeacher){
-    try{const t=JSON.parse(localStorage.getItem('dtwd_teacher')||'{}');classCode=t.classCode||null;}catch(e){}
-    if(!classCode&&pending)classCode=pending.classCode||null;
-    if(!classCode)classCode=generateClassCode();
+  // ── STEP 1: Write active status to localStorage IMMEDIATELY ──
+  if (isTeacher) {
+    const ex = JSON.parse(localStorage.getItem('dtwd_teacher') || '{}');
+    const rec = {
+      uid:         uid || ex.uid || '',
+      name:        ex.name || name,
+      email:       ex.email || email,
+      classCode:   classCode,
+      plan:        currentPlan.planKey || ex.plan || 'medium',
+      maxStudents: currentPlan.maxStudents || 30,
+      status:      'active',
+      expiresAt:   expiresAt
+    };
+    localStorage.setItem('dtwd_teacher', JSON.stringify(rec));
+    console.log('✅ localStorage dtwd_teacher → active, classCode:', classCode);
+  } else {
+    const ex = JSON.parse(localStorage.getItem('dtwd_student') || '{}');
+    const rec = {
+      uid:         uid || ex.uid || '',
+      name:        ex.name || name,
+      email:       ex.email || email,
+      classCode:   ex.classCode || null,
+      teacherName: ex.teacherName || null,
+      plan:        'student',
+      status:      'active',
+      purchasedAt: Date.now()
+    };
+    localStorage.setItem('dtwd_student', JSON.stringify(rec));
+    console.log('✅ localStorage dtwd_student → active');
   }
 
-  const expiresAt=Date.now()+(90*24*60*60*1000);
-
-  // STEP 1: Update localStorage FIRST
-  if(isTeacher){
-    const existing=JSON.parse(localStorage.getItem('dtwd_teacher')||'{}');
-    const updated={uid:uid||existing.uid||'',name:existing.name||name,email:existing.email||email,classCode,plan:currentPlan.planKey||existing.plan||'medium',maxStudents:currentPlan.maxStudents||30,status:'active',expiresAt};
-    localStorage.setItem('dtwd_teacher',JSON.stringify(updated));
-    console.log('✅ localStorage teacher → active');
-  }else{
-    const existing=JSON.parse(localStorage.getItem('dtwd_student')||'{}');
-    const updated={uid:uid||existing.uid||'',name:existing.name||name,email:existing.email||email,classCode:existing.classCode||null,teacherName:existing.teacherName||null,plan:'student',status:'active',purchasedAt:Date.now()};
-    localStorage.setItem('dtwd_student',JSON.stringify(updated));
-    console.log('✅ localStorage student → active');
-  }
-
-  // STEP 2: Remove pending flag
+  // ── STEP 2: Remove pending flag ──
   localStorage.removeItem('dtwd_pending_signup');
 
-  // STEP 3: Update Firestore (use set+merge so works even if doc missing)
-  if(uid){
-    try{
-      const payload={status:'active',name};
-      if(isTeacher){payload.classCode=classCode;payload.plan=currentPlan.planKey;payload.maxStudents=currentPlan.maxStudents;payload.expiresAt=expiresAt;payload.role='teacher';}
-      else{payload.role='student';payload.purchasedAt=Date.now();}
-      await db.collection('users').doc(uid).set(payload,{merge:true});
-      console.log('✅ Firestore → active for uid:',uid);
-    }catch(e){console.warn('Firestore update (non-fatal):',e.message);}
+  // ── STEP 3: Write to Firestore (set+merge — works even if doc doesn't exist) ──
+  if (uid) {
+    const payload = { status: 'active', name };
+    if (isTeacher) {
+      Object.assign(payload, {
+        role: 'teacher',
+        classCode, plan: currentPlan.planKey,
+        maxStudents: currentPlan.maxStudents, expiresAt
+      });
+    } else {
+      Object.assign(payload, { role: 'student', purchasedAt: Date.now() });
+    }
+    try {
+      await db.collection('users').doc(uid).set(payload, { merge: true });
+      console.log('✅ Firestore → active for uid:', uid);
+    } catch(e) {
+      console.warn('Firestore write failed (non-fatal, localStorage is set):', e.message);
+    }
   }
 
   closeCheckout();
 
-  // STEP 4: Show success
-  let successMsg='';
-  if(isTeacher){successMsg='Welcome '+name+'! Your teacher account is now active.<br><br>Your class code is:<br><strong style="font-size:1.5rem;color:#5b21b6;letter-spacing:3px;">'+classCode+'</strong><br><br>Share this with your students. Redirecting to dashboard... 🙏';}
-  else{successMsg='Welcome '+name+'! Your student access is now active. Redirecting to your dashboard. God bless you! 🙏';}
+  // ── STEP 4: Show success ──
+  const msg = isTeacher
+    ? 'Welcome ' + name + '! Your teacher account is now active.<br><br>'
+      + 'Your class code is:<br>'
+      + '<strong style="font-size:1.5rem;color:#5b21b6;letter-spacing:3px;">' + classCode + '</strong><br><br>'
+      + 'Share this code with your students.<br>Redirecting to dashboard... 🙏'
+    : 'Welcome ' + name + '! Your student access is now active.<br>Redirecting to your dashboard. God bless you! 🙏';
 
-  const sm=document.getElementById('success-message');const smModal=document.getElementById('success-modal');
-  if(sm)sm.innerHTML=successMsg;if(smModal)smModal.classList.remove('hidden');
-  const btn=document.getElementById('btn-pay');if(btn){btn.disabled=false;btn.textContent='🔒 Pay Securely';}
-  setTimeout(()=>closeSuccess(),4000);
+  const smEl  = document.getElementById('success-message');
+  const smMod = document.getElementById('success-modal');
+  if (smEl)  smEl.innerHTML = msg;
+  if (smMod) smMod.classList.remove('hidden');
+
+  const btn = document.getElementById('btn-pay');
+  if (btn) { btn.disabled = false; btn.textContent = '🔒 Pay Securely'; }
+
+  // ── STEP 5: Redirect after 3 seconds ──
+  setTimeout(() => {
+    window.location.replace(isTeacher ? 'dashboard.html' : 'student.html');
+  }, 3000);
 }
 
 function generateClassCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='DTWD-';for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];return code;}
