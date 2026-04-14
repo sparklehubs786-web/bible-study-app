@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   auth.onAuthStateChanged(async user=>{
     clearTimeout(authTimeout);
-    if(!user){showLoading(false);window.location.replace('auth.html');return;}
+    if(!user){showLoading(false);window.location.replace('signin.html');return;}
     console.log('Teacher dashboard auth fired:',user.email);
 
     // STEP 1: localStorage first (instant)
@@ -108,18 +108,54 @@ async function showDashboard(){
 
 async function loadStudentsAndSubmissions(){
   allStudents=[];allSubmissions=[];
-  if(!currentTeacher.classCode)return;
+  if(!currentTeacher.classCode){
+    console.warn('No class code — cannot load students');return;
+  }
+  console.log('Loading students for class code:',currentTeacher.classCode);
+
+  // Load students from Firestore
   try{
-    const snap=await Promise.race([db.collection('users').where('classCode','==',currentTeacher.classCode).where('role','==','student').get(),new Promise((_,r)=>setTimeout(()=>r(new Error('t')),5000))]);
-    allStudents=snap.docs.map(d=>({id:d.id,...d.data(),submissions:[]}));
-    console.log('Students loaded:',allStudents.length);
-  }catch(e){console.warn('Load students:',e.message);}
+    const snap=await Promise.race([
+      db.collection('users').where('classCode','==',currentTeacher.classCode).get(),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))
+    ]);
+    // Include anyone with this class code regardless of role field
+    allStudents=snap.docs
+      .filter(d=>d.data().role==='student'||d.data().role==null)
+      .map(d=>({id:d.id,...d.data(),submissions:[]}));
+    console.log('Students from Firestore:',allStudents.length);
+  }catch(e){
+    console.warn('Load students error:',e.message);
+    // Firestore rules may be blocking — show empty state with instructions
+  }
+
+  // Load submissions from Firestore
   try{
-    const snap=await Promise.race([db.collection('submissions').where('classCode','==',currentTeacher.classCode).get(),new Promise((_,r)=>setTimeout(()=>r(new Error('t')),5000))]);
+    const snap=await Promise.race([
+      db.collection('submissions').where('classCode','==',currentTeacher.classCode).get(),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))
+    ]);
     allSubmissions=snap.docs.map(d=>({id:d.id,...d.data()}));
-    console.log('Submissions loaded:',allSubmissions.length);
-    allStudents.forEach(s=>{s.submissions=allSubmissions.filter(sub=>sub.studentUid===s.uid||sub.studentUid===s.id);});
-  }catch(e){console.warn('Load submissions:',e.message);}
+    console.log('Submissions from Firestore:',allSubmissions.length);
+    // Match submissions to students
+    allStudents.forEach(s=>{
+      s.submissions=allSubmissions.filter(sub=>sub.studentUid===s.uid||sub.studentUid===s.id);
+    });
+    // Also add students who submitted but may not be in users collection
+    allSubmissions.forEach(sub=>{
+      if(!allStudents.find(s=>s.uid===sub.studentUid||s.id===sub.studentUid)){
+        allStudents.push({
+          id:sub.studentUid, uid:sub.studentUid,
+          name:sub.studentName||sub.studentEmail||'Student',
+          email:sub.studentEmail||'',
+          role:'student', classCode:currentTeacher.classCode,
+          submissions:[sub]
+        });
+      }
+    });
+  }catch(e){console.warn('Load submissions error:',e.message);}
+
+  console.log('Final: students='+allStudents.length+' submissions='+allSubmissions.length);
 }
 
 function updateStats(){
@@ -210,6 +246,6 @@ async function submitGrade(){
   closeGradeModal();updateStats();renderStudentList(allStudents);selectStudent(currentStudentId,null);
 }
 
-function loginWithGoogle(){window.location.replace('auth.html');}
-function logout(){auth.signOut().then(()=>{localStorage.removeItem('dtwd_teacher');window.location.replace('auth.html');});}
+function loginWithGoogle(){window.location.replace('signin.html');}
+function logout(){auth.signOut().then(()=>{localStorage.removeItem('dtwd_teacher');window.location.replace('signin.html');});}
 function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='DTWD-';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
